@@ -39,7 +39,7 @@ Some of the components of the project are developed for Arduino hardware (like
 recognized as comonents by esp-idf, a `components.mk` file has to be provided. This repo provides a 
 small script to generate those files.
 
-    ./manage_component.mk
+    ./manage_component_make
 
 #### arduino-esp32
 
