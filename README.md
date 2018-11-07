@@ -27,7 +27,7 @@ Presently being carried out.
 The repository use submodules to manage the components needed for the compilation. To clone the repo
 and fetch every submodule use the following command:
 
-    git clone --recurive https://github.com/MFreeze/morma_esp32
+    git clone --recursive https://github.com/MFreeze/morma_esp32
 
 
 ### Setup
