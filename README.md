@@ -48,7 +48,17 @@ the Installation section of [this
 file](https://github.com/espressif/arduino-esp32/blob/master/docs/esp-idf_component.md) starting at
 the `make menuconfig` point.
 
-Don't forget to **enable** "Autostart Arduino setup and loop on boot" option.
+#### Configuration
+
+The first thing is to run the following command
+
+    make menuconfig
+
+You'll have to ensure that your configuration respects the following points.
+
+* Under `SDK tool configuration`, check that the python2 interpreter is python2 (if your system uses python3 as default python interpreter)
+* Under `Arduino Configuration`, Autostart Arduino setup and loop on boot is activated
+* Under `Serial flasher config`, Flash size is equal to 4MB
 
 ### Compilation
 
