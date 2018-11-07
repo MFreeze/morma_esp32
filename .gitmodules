@@ -1,0 +1,24 @@
+[submodule "components/Adafruit_BME280_Library"]
+	path = components/Adafruit_BME280_Library
+	url = https://github.com/adafruit/Adafruit_BME280_Library
+[submodule "components/Adafruit-GFX-Library"]
+	path = components/Adafruit-GFX-Library
+	url = https://github.com/adafruit/Adafruit-GFX-Library
+[submodule "components/Adafruit_Sensor"]
+	path = components/Adafruit_Sensor
+	url = https://github.com/adafruit/Adafruit_Sensor
+[submodule "components/arduino-esp32"]
+	path = components/arduino-esp32
+	url = https://github.com/espressif/arduino-esp32
+[submodule "components/AutoConnect"]
+	path = components/AutoConnect
+	url = https://github.com/Hieromon/AutoConnect
+[submodule "components/GxEPD"]
+	path = components/GxEPD
+	url = https://github.com/ZinggJM/GxEPD
+[submodule "components/OneWire"]
+	path = components/OneWire
+	url = https://github.com/PaulStoffregen/OneWire
+[submodule "components/PageBuilder"]
+	path = components/PageBuilder
+	url = https://github.com/Hieromon/PageBuilder.git
