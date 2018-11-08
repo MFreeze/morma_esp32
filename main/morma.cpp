@@ -19,22 +19,8 @@
  *  Get time each days
  */
 
+#include "config.h"
 
-
-/*-----------------------------------------------------------------------------
- *  Configuration
- *-----------------------------------------------------------------------------*/
-/* {{{ -------- Configuration -------- */
-#define E_SCREEN            1       // Control the type of display
-#define WIFI                0       // Use of Wifi
-#define BME280_MEASURES     1       // Should morma try to perform measure with BME280 sensors?
-#define DS18B20_MEASURES    1       // Should morma try to perform measure with DS18B20 sensors?
-#define SOIL_MEASURES       1       // Should morma try to perform soil measures?
-#define SEND_DATA_INFLUXDB  0       // Should morma send data to InfluxDB server?
-#define END_OF_MEASURE_LINE "\n"    
-#define WEB_SERVER          0
-#define USE_SPIFFS          1       // Determine whether we should use internal storage
-/* }}} */
 
 #define NA_VAL -1000.0
 #define USE_GxGDEP015OC1
@@ -69,8 +55,8 @@
 /* Dépendances pour l'écran e-ink 1.54inch WaveShare*/
 #include "escreen_print.h"
 
-GxIO_Class io(SPI, 5, 22, 21);
-GxEPD_Class display(io, 16, 4);
+GxIO_Class io(SPI, TFT_CS, TFT_DC, TFT_RST);
+GxEPD_Class display(io, TFT_RST, MISO_BUSY);
 #endif
 
 #if WEB_SERVER
@@ -105,8 +91,8 @@ const char INFLUX_MEASUREMENT[] = "test_ESP32_20180713";
 #if BME280_MEASURES
 // Inside and outside DME260
 /* Define pins for I2C bus*/
-const int sclPin = 32;
-const int sdaPin = 33;
+const int sclPin = 22;
+const int sdaPin = 21;
 #endif
 
 #if DS18B20_MEASURES
@@ -429,7 +415,20 @@ void loop()
 
 
 #if E_SCREEN
-    showPartialUpdate (display, tSubs, hSubs, tIn, hIn, tOut, hOut);
+    showPartialUpdate (display
+#if DS18B20_MEASURES
+            ,tSubs
+#endif
+#if SOIL_MEASURES
+            ,hSubs
+#endif
+#if BME280_MEASURES
+            ,tIn
+            ,hIn
+            ,tOut
+            ,hOut
+#endif
+            );
 #else
     Serial.print (fields);
 #endif

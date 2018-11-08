@@ -17,20 +17,27 @@
  */
 
 #include "escreen_print.h"
+/* TODO Check whether this is required... */
 #include <GxGDEP015OC1/GxGDEP015OC1.cpp>
 #include <GxIO/GxIO_SPI/GxIO_SPI.cpp>
 #include <GxIO/GxIO.cpp>
+
+#define PRINT_STRING_ON_SCREEN(display, font, string, offset, x, y, w, h, fgcol, bgcol) do {\
+    display.setRotation(45); \
+    display.setFont(font); \
+    display.setTextColor(fgcol); \
+    display.fillRect(x, y, w, h, bgcol); \
+    display.setCursor(x, y + offset); \
+    display.print(string); \
+    display.updateWindow(x, y, w, h, true); \
+} while (0);
 
 void initEInkScreen (GxEPD_Class display)
 {
     display.init();
 
-    printf("No problem with the initialization.\n");
-
     display.drawExampleBitmap(gImage_VBsplash, 0, 0, 200, 200, GxEPD_BLACK);
-    printf("%s - %d : drawExampleBitmap Ok\n", __FILE__, __LINE__);
     display.update();
-    printf("%s - %d : update Ok\n", __FILE__, __LINE__);
     delay(2000);
 
     display.drawExampleBitmap(gImage_measureBG, 0, 0, 200, 200, GxEPD_BLACK);
@@ -42,109 +49,78 @@ void initEInkScreen (GxEPD_Class display)
     delay(3000);
 }
 
-void showPartialUpdate (GxEPD_Class display, float tSubs, float hSubs, float tIn, float hIn, float tOut, float hOut)
+void showPartialUpdate (GxEPD_Class display
+#if DS18B20_MEASURES
+        ,float tSubs
+#endif
+#if SOIL_MEASURES
+        ,float hSubs
+#endif
+#if BME280_MEASURES
+        ,float tIn
+        ,float hIn
+        ,float tOut
+        ,float hOut
+#endif
+        )
 {
-    const char* name = "FreeSans12pt7b";
+//    const char* name = "FreeSans12pt7b";
     const GFXfont* f = &FreeSans12pt7b;
 
+    /*
+     * .________________________________.
+     * |                |               |
+     * |    (x1,y1)     |    (x2,y1)    |
+     * |                |               |
+     * |----------------+---------------|
+     * |                |               |
+     * |    (x1,y2)     |    (x2,y2)    |
+     * |                |               |
+     * |----------------+---------------|
+     * |                |               |
+     * |    (x1,y3)     |    (x2,y3)    |
+     * |                |               |
+     * |________________|_______________|
+     *
+     */
+
+    uint16_t x1 = 10;
+    uint16_t x2 = 110;
+    uint16_t y1 = 29;
+    uint16_t y2 = 86;
+    uint16_t y3 = 141;
+    uint16_t width = 50;
+    uint16_t height = 25;
+
+
+
+#if DS18B20_MEASURES
     // print substrate temperature
     String tSubsString = String(tSubs,1);
+    PRINT_STRING_ON_SCREEN(display, f, tSubsString, 18, x1, y1, width, height, GxEPD_BLACK, GxEPD_WHITE);
+#endif
 
-    uint16_t vOffset = 18; //required so that text is written INSIDE the box
-
-    uint16_t box_x = 10;
-    uint16_t box_y = 29;
-    uint16_t box_w = 50;
-    uint16_t box_h = 25;
-    uint16_t cursor_y = box_y + vOffset;
-
-    display.setRotation(45);
-    display.setFont(f);
-    display.setTextColor(GxEPD_BLACK);
-
-    display.fillRect(box_x, box_y, box_w, box_h, GxEPD_WHITE);
-    display.setCursor(box_x, cursor_y);
-    display.print(tSubsString); 
-    display.updateWindow(box_x, box_y, box_w, box_h, true);
-
+#if SOIL_MEASURES
     // print substrate hygrometry
     String hSubsString = String(hSubs,1);
-    //String humAndUnitsString = String("IN hygro " + humString + "%");
+    PRINT_STRING_ON_SCREEN(display, f, hSubsString, 18, x2, y1, width, height, GxEPD_BLACK, GxEPD_WHITE);
+#endif
 
-    uint16_t box_x2 = 110;
-    uint16_t box_y2 = box_y;
-    uint16_t cursor_y2 = box_y2 + vOffset;
-
-    display.setRotation(45);
-    display.setFont(f);
-    display.setTextColor(GxEPD_BLACK);
-
-    display.fillRect(box_x2, box_y2, box_w, box_h, GxEPD_WHITE);
-    display.setCursor(box_x2, cursor_y2);
-    display.print(hSubsString); 
-    display.updateWindow(box_x2, box_y2, box_w, box_h, true);
-
+#if BME280_MEASURES
     // print internal temperature
     String tInString = String(tIn,1);
-
-    uint16_t box_x3 = box_x;
-    uint16_t box_y3 = 86;
-    uint16_t cursor_y3 = box_y3 + vOffset;
-
-    display.setRotation(45);
-    display.setFont(f);
-    display.setTextColor(GxEPD_BLACK);
-
-    display.fillRect(box_x3, box_y3, box_w, box_h, GxEPD_WHITE);
-    display.setCursor(box_x3, cursor_y3);
-    display.print(tInString); 
-    display.updateWindow(box_x3, box_y3, box_w, box_h, true);
+    PRINT_STRING_ON_SCREEN(display, f, tInString, 18, x1, y2, width, height, GxEPD_BLACK, GxEPD_WHITE);
 
     // print internal hygrometry
     String hInString = String(hIn,1);
-
-    uint16_t box_x4 = box_x2;
-    uint16_t box_y4 = box_y3;
-    uint16_t cursor_y4 = box_y4 + vOffset;
-
-    display.setRotation(45);
-    display.setFont(f);
-    display.setTextColor(GxEPD_BLACK);
-
-    display.fillRect(box_x4, box_y4, box_w, box_h, GxEPD_WHITE);
-    display.setCursor(box_x4, cursor_y4);
-    display.print(hInString); 
-    display.updateWindow(box_x4, box_y4, box_w, box_h, true);
+    PRINT_STRING_ON_SCREEN(display, f, hInString, 18, x2, y2, width, height, GxEPD_BLACK, GxEPD_WHITE);
 
     // print external temperature
     String tOutString = String(tOut,1);
-
-    uint16_t box_x5 = box_x;
-    uint16_t box_y5 = 141;
-    uint16_t cursor_y5 = box_y5 + vOffset;
-
-    display.setRotation(45);
-    display.setFont(f);
-    display.setTextColor(GxEPD_BLACK);
-
-    display.fillRect(box_x5, box_y5, box_w, box_h, GxEPD_WHITE);
-    display.setCursor(box_x5, cursor_y5);
-    display.print(tOutString); 
-    display.updateWindow(box_x5, box_y5, box_w, box_h, true);
+    PRINT_STRING_ON_SCREEN(display, f, tOutString, 18, x1, y3, width, height, GxEPD_BLACK, GxEPD_WHITE);
 
     // print external hygrometry
     String hOutString = String(hOut,1);
-
-    uint16_t box_x6 = box_x2;
-    uint16_t box_y6 = box_y5;
-    uint16_t cursor_y6 = box_y6 + vOffset;
-
-    display.setRotation(45);
-    display.setFont(f);
-    display.setTextColor(GxEPD_BLACK);
-
-    display.fillRect(box_x6, box_y6, box_w, box_h, GxEPD_WHITE);
-    display.setCursor(box_x6, cursor_y6);
-    display.print(hOutString); 
-    display.updateWindow(box_x6, box_y6, box_w, box_h, true);
+    PRINT_STRING_ON_SCREEN(display, f, hOutString, 18, x2, y3, width, height, GxEPD_BLACK, GxEPD_WHITE);
+#endif
 }

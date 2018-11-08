@@ -25,10 +25,31 @@
 #include "bitmap_VBsplashScreen.h"
 #include "bitmap_measureBG.h"
 #include <Fonts/FreeSans12pt7b.h>
+#include "config.h"
+
+#define TFT_CS      14
+#define SCK_CLK     18
+#define MISO_BUSY   19
+#define MOSI_DIN    23
+#define TFT_DC      27
+#define TFT_RST     33
 
 // Initilize the screen
 void initEInkScreen (GxEPD_Class display);
 
 // Partial update the screen
-void showPartialUpdate (GxEPD_Class display, float tSubs, float hSubs, float tIn, float hIn, float tOut, float hOut);
+void showPartialUpdate (GxEPD_Class display
+#if DS18B20_MEASURES
+        ,float tSubs
+#endif
+#if SOIL_MEASURES
+        ,float hSubs
+#endif
+#if BME280_MEASURES
+        ,float tIn
+        ,float hIn
+        ,float tOut
+        ,float hOut
+#endif
+        );
 #endif
