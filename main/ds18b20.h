@@ -19,8 +19,20 @@
 
 #ifndef __DS18B20_H__
 #define __DS18B20_H__
-
 #include <OneWire.h>
 
-extern OneWire ds;
+// default values
+#define DS_ERROR_VALUE -100.0
+
+
+/* DS18B20 - Code de retour de la fonction getTemperature() */
+enum DS18B20_RCODES {
+    READ_OK,  // Lecture ok
+    NO_SENSOR_FOUND,  // Pas de capteur
+    INVALID_ADDRESS,  // Adresse reçue invalide
+    INVALID_SENSOR  // Capteur invalide (pas un DS18B20)
+};
+
+DS18B20_RCODES readOneWireTemp (float *temperatures, byte reset_search=1);
+
 #endif     /* -----  not __DS18B20_H__  ----- */

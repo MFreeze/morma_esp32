@@ -41,8 +41,7 @@
 #endif
 
 #if DS18B20_MEASURES
-/* Dépendances pour le bus 1-Wire -> sonde DS18B20*/
-#include <OneWire.h>
+#include "ds18b20.h"
 #endif
 
 #if BME280_MEASURES
@@ -63,6 +62,8 @@ GxEPD_Class display(io, TFT_RST, MISO_BUSY);
 #include <WebServer.h>
 #include <AutoConnect.h>
 #endif
+
+#include <esp_log.h>
 /* }}} */
 
 
@@ -99,13 +100,6 @@ const int sdaPin = 21;
 /* DS18B20 - Broche du bus 1-Wire */
 const byte BROCHE_ONEWIRE = 25;      // what pin DS18B20 is connected to
 
-/* DS18B20 - Code de retour de la fonction getTemperature() */
-enum DS18B20_RCODES {
-    READ_OK,  // Lecture ok
-    NO_SENSOR_FOUND,  // Pas de capteur
-    INVALID_ADDRESS,  // Adresse reçue invalide
-    INVALID_SENSOR  // Capteur invalide (pas un DS18B20)
-};
 #endif
 
 #if SOIL_MEASURES
@@ -133,13 +127,6 @@ byte mac[6];
 Adafruit_BME280 bmeIn; // I2C BME 620 Inside 
 Adafruit_BME280 bmeOut; // I2C BME 620 Outside
 #endif
-
-
-#if DS18B20_MEASURES
-/* DS18B20 - Création de l'objet OneWire pour manipuler le bus 1-Wire */
-OneWire ds(BROCHE_ONEWIRE);
-float tSubs;
-#endif
 /* }}} */
 
 #if SOIL_MEASURES
@@ -153,62 +140,6 @@ int hSubs = 0;
  *  Functions
  *-----------------------------------------------------------------------------*/
 /* {{{ -------- Functions -------- */
-
-#if DS18B20_MEASURES
-//DS18B20 - Fonction de lecture de la température via un capteur DS18B20.
-// TODO put this function in another file
-byte getTemperature(float *tSubs, byte reset_search) {
-    byte data[9];       // Data read from the scratchpad
-    byte addr[8];       // Address of the detected 1-Wire component
-
-    /* Reset le bus 1-Wire ci nécessaire (requis pour la lecture du premier capteur) */
-    if (reset_search) {
-        ds.reset_search();
-    }
-
-    /* Recherche le prochain capteur 1-Wire disponible */
-    if (!ds.search(addr)) {
-        // Pas de capteur
-        return NO_SENSOR_FOUND;
-    }
-
-    /* Vérifie que l'adresse a été correctement reçue */
-    if (OneWire::crc8(addr, 7) != addr[7]) {
-        // Adresse invalide
-        return INVALID_ADDRESS;
-    }
-
-    /* Vérifie qu'il s'agit bien d'un DS18B20 */
-    if (addr[0] != 0x28) {
-        // Mauvais type de capteur
-        return INVALID_SENSOR;
-    }
-
-    /* Reset le bus 1-Wire et sélectionne le capteur */
-    ds.reset();
-    ds.select(addr);
-
-    /* Lance une prise de mesure de température et attend la fin de la mesure */
-    ds.write(0x44, 1);
-    delay(800);
-
-    /* Reset le bus 1-Wire, sélectionne le capteur et envoie une demande de lecture du scratchpad */
-    ds.reset();
-    ds.select(addr);
-    ds.write(0xBE);
-
-    /* Lecture du scratchpad */
-    for (byte i = 0; i < 9; i++) {
-        data[i] = ds.read();
-    }
-
-    /* Calcul de la température en degré Celsius */
-    *tSubs = (int16_t) ((data[1] << 8) | data[0]) * 0.0625; 
-
-    // Pas d'erreur
-    return READ_OK;
-}
-#endif
 
 #if WEB_SERVER
 void rootPage() {
@@ -348,11 +279,8 @@ void loop()
 
 #if DS18B20_MEASURES
     // get values from DS18S20
-    if (getTemperature(&tSubs, true) != READ_OK)
-    {
-        tSubs = -1000.0;
-        Serial.println("Failed to perform reading substrate BMDS18B20 sensor :(");
-    }
+    if (readOneWireTemp (&tSubs) != READ_OK)
+        tSubs = DS_ERROR_VALUE;
 #endif
 
 
@@ -391,7 +319,6 @@ void loop()
 #endif
 
     sprintf(tags, formatTags, readingStatus);
-    // XXX Awful tricks that works only if BME280 is activated...
     sprintf(fields, formatFields
 #if DS18B20_MEASURES
             ,tSubs
