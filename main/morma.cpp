@@ -44,11 +44,7 @@
 #include "ds18b20.h"
 #endif
 
-#if BME280_MEASURES
-/* Dépendances pour le bus I2C -> sonde BME280*/
-#include <Wire.h>
-#include <Adafruit_BME280.h>
-#endif
+#include "local_bme280.h"
 
 #if E_SCREEN
 /* Dépendances pour l'écran e-ink 1.54inch WaveShare*/
@@ -89,19 +85,6 @@ const char INFLUX_PASS[] = "6xQH6d0SDB6ttYJXGX04";
 const char INFLUX_MEASUREMENT[] = "test_ESP32_20180713";
 #endif
 
-#if BME280_MEASURES
-// Inside and outside DME260
-/* Define pins for I2C bus*/
-const int sclPin = 22;
-const int sdaPin = 21;
-#endif
-
-#if DS18B20_MEASURES
-/* DS18B20 - Broche du bus 1-Wire */
-const byte BROCHE_ONEWIRE = 25;      // what pin DS18B20 is connected to
-
-#endif
-
 #if SOIL_MEASURES
 //Inside HL-69
 const int soilRead = 26;
@@ -118,22 +101,9 @@ byte mac[6];
 
 
 
-/*-----------------------------------------------------------------------------
- *  Sensors
- *-----------------------------------------------------------------------------*/
-/* {{{ -------- Sensors -------- */
-
-#if BME280_MEASURES
-Adafruit_BME280 bmeIn; // I2C BME 620 Inside 
-Adafruit_BME280 bmeOut; // I2C BME 620 Outside
-#endif
-/* }}} */
-
 #if SOIL_MEASURES
 int hSubs = 0;
 #endif
-
-
 
 
 /*-----------------------------------------------------------------------------
@@ -155,30 +125,7 @@ void setup()
     Serial.begin(115200);
 
 #if BME280_MEASURES
-    Wire.begin(sdaPin, sclPin);
-    bmeIn.begin(0x76);
-    bmeOut.begin(0x77);
-
-    if (!bmeIn.begin(0x76)) {
-        Serial.println("Could not find a valid BME280 IN sensor, check wiring!");
-    }
-
-    if (!bmeOut.begin(0x77)) {
-        Serial.println("Could not find a valid BME280 OUT sensor, check wiring!");
-    }
-#endif
-
-#if DS18B20_MEASURES
-    //XXX is this code useful?
-    /* delay(5000);
-       OneWire ds(BROCHE_ONEWIRE);
-       delay(5000);
-       */
-    /* Lit la température ambiante à ~1Hz */
-    /*  if (getTemperature(&tSubs, true) != READ_OK) {
-        Serial.println(F("Erreur de lecture de la sonde substrat"));
-        return;
-        }*/
+    initBmeSensors ();
 #endif
 
 #if SOIL_MEASURES
@@ -237,6 +184,7 @@ void loop()
 {
     char tags[16];
     char fields[256];
+    char str_result[BUFFER_SIZE];
     char formatTags[] = "read_all=%s";
     char formatFields[] = ""
 #if DS18B20_MEASURES
@@ -244,14 +192,6 @@ void loop()
 #endif
 #if SOIL_MEASURES
         "substrateHumidity=%0.3f,"
-#endif
-#if BME280_MEASURES
-        "insideTemperature=%0.3f,"
-        "insideHumidity=%0.3f,"
-        "insidePressure=%0.3f,"
-        "outsideTemperature=%0.3f,"
-        "outsideHumidity=%0.3f,"
-        "outsidePressure=%0.3f"
 #endif
         END_OF_MEASURE_LINE;
 
@@ -262,14 +202,6 @@ void loop()
 #endif
 #if SOIL_MEASURES
     int hSubs = 0;
-#endif
-#if BME280_MEASURES
-    float tIn = 0.0;
-    float hIn = 0.0;
-    float pIn = 0.0;
-    float tOut = 0.0;
-    float hOut = 0.0;
-    float pOut = 0.0;
 #endif
 
 #if WEB_SERVER
@@ -289,33 +221,11 @@ void loop()
     hSubs = analogRead(soilRead); //read pin 26 then assign hSubs to that value
 #endif
 
-
 #if BME280_MEASURES
-    if (bmeIn.begin(0x76))
-    {
-        tIn = bmeIn.readTemperature();
-        hIn = bmeIn.readHumidity();
-        pIn = bmeIn.readPressure();
-    } else
-    {
-        tIn = -1000.0;
-        hIn = -1000.0;
-        pIn = -1000.0;
-        Serial.println("Failed to perform reading inside BME280 sensor :(");
-    }
+    readBmeMeasures ();
+    printBmeMeasures (str_result, BUFFER_SIZE);
 
-    if (bmeOut.begin(0x77))
-    {
-        tOut = bmeOut.readTemperature();
-        hOut = bmeOut.readHumidity();
-        pOut = bmeOut.readPressure();
-    } else
-    {
-        tOut = -1000.0;
-        hOut = -1000.0;
-        pOut = -1000.0;
-        Serial.println("Failed to perform reading outside BME280 sensor :(");
-    }
+    printf("%s\n", str_result);
 #endif
 
     sprintf(tags, formatTags, readingStatus);
@@ -325,9 +235,6 @@ void loop()
 #endif
 #if SOIL_MEASURES
             ,hSubs 
-#endif
-#if BME280_MEASURES
-            ,tIn, hIn, pIn, tOut, hOut, pOut
 #endif
            );
 
@@ -359,6 +266,8 @@ void loop()
 #else
     Serial.print (fields);
 #endif
+
+    Serial.print (fields);
 
     delay(5000); //Delay 5 sec.
 }

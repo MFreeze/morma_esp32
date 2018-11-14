@@ -4,9 +4,11 @@
 # (Uses default behaviour of compiling all source files in directory, adding 'include' to include path.)
 
 
-morma.o: config.h
+morma.o: $(COMPONENT_PATH)/config.h
+ 
+escreen_print.o: $(COMPONENT_PATH)/config.h
 
-escreen_print.o: config.h
+local_bme280.o: $(COMPONENT_PATH)/config.h
 
-config.h: $(COMPONENT_PATH)/config.def.h
-	cp $(COMPONENT_PATH)/config.def.h $(COMPONENT_PATH)/config.h
+$(COMPONENT_PATH)/config.h: $(COMPONENT_PATH)/config.def.h
+	cp -n $(COMPONENT_PATH)/config.def.h $(COMPONENT_PATH)/config.h
