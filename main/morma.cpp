@@ -174,6 +174,10 @@ void setup()
 #endif
 
 #endif
+    
+#if  E_SCREEN
+    initScreen ();
+#endif     /* -----  E_SCREEN  ----- */
 
     Serial.println(String("SDK:") + String(ESP.getSdkVersion()));
 }
@@ -214,6 +218,10 @@ void loop()
     str_parser += cur_written;
 
     printf("%s\n", str_result);
+
+#ifdef  E_SCREEN
+    printDsMeasuresOnScreen ();
+#endif     /* -----  E_SCREEN  ----- */
 #endif
 
 
@@ -230,6 +238,10 @@ void loop()
     str_parser += cur_written;
 
     printf("%s\n", str_result);
+
+#ifdef  E_SCREEN
+    printBmeMeasuresOnScreen ();
+#endif     /* -----  E_SCREEN  ----- */
 #endif
 
     sprintf(tags, formatTags, readingStatus);

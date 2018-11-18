@@ -30,6 +30,14 @@
 #include <esp_log.h>
 
 
+#ifndef  DS_TEMP_LABEL
+#define  DS_TEMP_LABEL "T"
+#endif   /* ----- #ifndef DS_TEMP_LABEL  ----- */
+
+#ifndef  DS_TEMP_UNIT
+#define  DS_TEMP_UNIT "C"
+#endif   /* ----- #ifndef DS_TEMP_UNIT  ----- */
+
 /*-----------------------------------------------------------------------------
  *  Log Macros
  *-----------------------------------------------------------------------------*/
@@ -37,6 +45,8 @@
 #define DS_NAME "DS18B20"
 #define DS_ADDR_FORMAT "%#04X%02X%02X%02X%02X%02X%02X%02X"
 #define DS_ADDR_ARGS(addr) addr[0],addr[1],addr[2],addr[3],addr[4],addr[5],addr[6],addr[7]
+#define DS_SHORT_FORMAT "%02X%02X%02X%02X"
+#define DS_SHORT_ARGS(addr) addr[0],addr[1],addr[2],addr[3]
 /* }}} */
 
 
@@ -148,8 +158,8 @@ discoverDsSensors ()
                 // First register the sensor...
                 snprintf (label, 
                           ESCREEN_MAX_STR_SIZE, 
-                          DS_ADDR_FORMAT, 
-                          DS_ADDR_ARGS (ds_sensors[nb_discovered].addr));
+                          DS_SHORT_FORMAT, 
+                          DS_SHORT_ARGS (ds_sensors[nb_discovered].addr));
                 if (addNewSensorToScreen (label, 1) == ESCREEN_NO_MEM)
                 {
                     SENSOR_LOGW (DS_NAME, 
@@ -164,7 +174,7 @@ discoverDsSensors ()
                 }
                 
                 // ... then the measure
-                switch (addNewMeasureToSensorDisplay (label, "T", "C"))
+                switch (addNewMeasureToSensorDisplay (label, DS_TEMP_LABEL, DS_TEMP_UNIT))
                 {
                     case ESCREEN_TOO_MANY_MEASURES:
                         SENSOR_LOGW (DS_NAME,
@@ -305,4 +315,33 @@ printDsMeasures (char *str, size_t size, int first)
     *(str_parser - 1) = '\0';
     return total_printed_chars;
 }		/* -----  end of function printDsMeasures  ----- */
+
+
+#ifdef  E_SCREEN
+/*
+ * ===  FUNCTION  ======================================================================
+ *         Name:  printDsMeasuresOnScreen
+ *  Description:  Print the DS Measures on screen
+ *   Parameters:  
+ *       Return:  
+ * =====================================================================================
+ */
+/* --------- printDsMeasuresOnScreen --------- {{{ */
+    void
+printDsMeasuresOnScreen ()
+{
+    char label[ESCREEN_MAX_STR_SIZE];
+    ds18b20_sensor_t *cur;
+
+    for (cur = ds_sensors; cur != ds_sensors + nb_discovered; cur ++)
+    {
+        snprintf (label, 
+                  ESCREEN_MAX_STR_SIZE, 
+                  DS_SHORT_FORMAT, 
+                  DS_SHORT_ARGS (cur->addr));
+        updateMeasure (label, DS_TEMP_LABEL, cur->t);
+    }
+}		/* -----  end of function printDsMeasuresOnScreen  ----- */
+/* }}} */
+#endif     /* -----  E_SCREEN  ----- */
 /* }}} */

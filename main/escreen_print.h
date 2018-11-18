@@ -24,7 +24,6 @@
 #include <GxIO/GxIO.h>
 #include "bitmap_VBsplashScreen.h"
 #include "bitmap_measureBG.h"
-#include <Fonts/FreeSans12pt7b.h>
 #include "config.h"
 
 
@@ -39,7 +38,8 @@ enum escreen_return_codes
     ESCREEN_SUCCESS = 0,
     ESCREEN_NO_MEM = 1,
     ESCREEN_TOO_MANY_MEASURES = 2,
-    ESCREEN_SENSOR_NOT_FOUND = 4
+    ESCREEN_SENSOR_NOT_FOUND = 4,
+    ESCREEN_MEASURE_NOT_FOUND = 8
 };				/* ----------  end of enum escreen_return_codes  ---------- */
 
 typedef enum escreen_return_codes escreen_return_codes_t;
@@ -84,6 +84,10 @@ typedef struct display_measure display_measure_t;
  *                * int nb_measures: the number of measures supposed to be monitored
  *                * int cur_monitored_measures: the number of measures effectively
  *                      monitored            
+ *                * int x, y, w, h: position, width and length of the rectangle
+ *                      containing sensor name
+ *                * int measure_label_in_title: indicates whether the label of the
+ *                      associated measures should be printed next to the sensor title.
  * =====================================================================================
  */
 struct display_sensor {
@@ -91,6 +95,8 @@ struct display_sensor {
     display_measure_t *measures;
     int nb_measures;
     int cur_monitored_measures;
+    int x, y, w, h;
+    int measure_label_in_title;
 };				/* ----------  end of struct display_sensor  ---------- */
 
 typedef struct display_sensor display_sensor_t;
@@ -102,10 +108,16 @@ typedef struct display_sensor display_sensor_t;
  *-----------------------------------------------------------------------------*/
 /* {{{ -------- Functions -------- */
 // Add a new sensor to the displau
-int addNewSensorToScreen (const char *label, int nb_measures);
+int addNewSensorToScreen (const char *label, int nb_measures, int label_in_title = false);
 
 // Add a new measure associated to a sensor
 int addNewMeasureToSensorDisplay (const char *sensor_label, const char *meas_label, const char *unit);
+
+// Initializes the screen
+void initScreen ();
+
+// Update measure
+int updateMeasure (const char *sensor_label, const char *measure_label, float value);
 /* }}} */
 
 #endif

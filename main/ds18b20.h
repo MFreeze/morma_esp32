@@ -60,6 +60,7 @@ typedef enum ds18b20_return_codes ds18b20_return_codes_t;
  *                * byte addr[8]: the address of the sensor
  *                * int initialized: a boolean indicating whether the sensor has
  *                      been initialized or not
+ *                * int id: a single id (awful trick to get EScreen working)
  * =====================================================================================
  */
 struct ds18b20_sensor 
@@ -85,6 +86,11 @@ void readOneWireTemp ();
 
 // print measures in a string
 int printDsMeasures (char *str, size_t size, int first);
+
+#ifdef  E_SCREEN
+// print measure on the displau
+void printDsMeasuresOnScreen ();
+#endif     /* -----  E_SCREEN  ----- */
 /* }}} */
 
 #endif     /* -----  not __DS18B20_H__  ----- */
