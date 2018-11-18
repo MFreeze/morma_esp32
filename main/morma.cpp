@@ -20,11 +20,7 @@
  */
 
 #include "config.h"
-
-
-#define NA_VAL -1000.0
-#define USE_GxGDEP015OC1
-
+#include "constants.h"
 
 /*-----------------------------------------------------------------------------
  *  Libraries
@@ -52,9 +48,6 @@
 #if E_SCREEN
 /* Dépendances pour l'écran e-ink 1.54inch WaveShare*/
 #include "escreen_print.h"
-
-GxIO_Class io(SPI, TFT_CS, TFT_DC, TFT_RST);
-GxEPD_Class display(io, TFT_RST, MISO_BUSY);
 #endif
 
 #if WEB_SERVER
@@ -183,9 +176,6 @@ void setup()
 #endif
 
     Serial.println(String("SDK:") + String(ESP.getSdkVersion()));
-#if E_SCREEN
-    initEInkScreen(display);
-#endif
 }
 
 void loop()
@@ -256,26 +246,6 @@ void loop()
         Serial.print("error: ");
         Serial.println(influx.getResponse());
     }
-#endif
-
-
-#if E_SCREEN
-    showPartialUpdate (display
-#if DS18B20_MEASURES
-            ,tSubs
-#endif
-#if SOIL_MEASURES
-            ,hSubs
-#endif
-#if BME280_MEASURES
-            ,tIn
-            ,hIn
-            ,tOut
-            ,hOut
-#endif
-            );
-#else
-    Serial.print (fields);
 #endif
 
     Serial.print (fields);

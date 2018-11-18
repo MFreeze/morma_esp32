@@ -29,4 +29,9 @@
 #define  BUFFER_SIZE 1024
 #endif   /* ----- #ifndef BUFFER_SIZE  ----- */
 
+
+#ifndef  ESCREEN_MAX_STR_SIZE
+#define  ESCREEN_MAX_STR_SIZE 64
+#endif   /* ----- #ifndef E_SCREEN_MAX_STR_SIZE  ----- */
+
 #endif   /* ----- #ifndef __CONSTANTS_H__  ----- */

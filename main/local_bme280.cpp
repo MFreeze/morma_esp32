@@ -20,6 +20,10 @@
 #include "sensor_debug.h"
 #include "local_bme280.h"
 
+#ifdef  E_SCREEN
+#include "escreen_print.h"
+#endif
+
 #include <stdlib.h>
 #include <esp_log.h>
 
@@ -104,6 +108,7 @@ static bme280_sensor_t bme_4;
  *  Sensors Macros Function
  *-----------------------------------------------------------------------------*/
 /* {{{ -------- Sensors Macros Function -------- */
+#ifndef  E_SCREEN
 #define BME_CHECK_AND_INIT_SENSOR(x, addr, w, n, rcode) do {\
     if (!bme_##x.interface.begin (addr, &w))\
     {\
@@ -116,6 +121,64 @@ static bme280_sensor_t bme_4;
     bme_##x.missing = 0;\
     bme_##x.name = n;\
 } while (0);
+#else
+#define BME_CHECK_AND_INIT_SENSOR(x, addr, w, n, rcode) do {\
+    if (!bme_##x.interface.begin (addr, &w))\
+    {\
+        rcode |= BME280_ERROR_##x;\
+        SENSOR_LOGE (BME_NAME, "Cannot find sensor %s. Check wiring!\n", n);\
+    }\
+    bme_##x.t = 0.0;\
+    bme_##x.h = 0.0;\
+    bme_##x.p = 0.0;\
+    bme_##x.missing = 0;\
+    bme_##x.name = n;\
+    if (addNewSensorToScreen (n, 3) == ESCREEN_NO_MEM)\
+    {\
+        SENSOR_LOGW (BME_NAME, "%s won't be displayed on screen (not enough mem error).\n", n);\
+    }\
+    else\
+    {\
+        SENSOR_LOGI (BME_NAME,"%s correctly registered to escreen.\n", n);\
+    }\
+    switch (addNewMeasureToSensorDisplay (n, "T", "C"))\
+    {\
+        case ESCREEN_TOO_MANY_MEASURES:\
+            SENSOR_LOGW (BME_NAME, "%s temperature already added.\n", n);\
+            break;\
+        case ESCREEN_SENSOR_NOT_FOUND:\
+            SENSOR_LOGW (BME_NAME, "%s not found, check that the ESCREEN_MAX_STR_SIZE is large enough.\n", n);\
+            break;\
+        case ESCREEN_SUCCESS:\
+            SENSOR_LOGI (BME_NAME, "%s temperature correctly registered to escreen.\n", n);\
+            break;\
+    }\
+    switch (addNewMeasureToSensorDisplay (n, "H", "%"))\
+    {\
+        case ESCREEN_TOO_MANY_MEASURES:\
+            SENSOR_LOGW (BME_NAME, "%s humidity already added.\n", n);\
+            break;\
+        case ESCREEN_SENSOR_NOT_FOUND:\
+            SENSOR_LOGW (BME_NAME, "%s not found, check that the ESCREEN_MAX_STR_SIZE is large enough.\n", n);\
+            break;\
+        case ESCREEN_SUCCESS:\
+            SENSOR_LOGI (BME_NAME, "%s humidity correctly registered to escreen.\n", n);\
+            break;\
+    }\
+    switch (addNewMeasureToSensorDisplay (n, "P", "Pa"))\
+    {\
+        case ESCREEN_TOO_MANY_MEASURES:\
+            SENSOR_LOGW (BME_NAME, "%s pressure already added.\n", n);\
+            break;\
+        case ESCREEN_SENSOR_NOT_FOUND:\
+            SENSOR_LOGW (BME_NAME, "%s not found, check that the ESCREEN_MAX_STR_SIZE is large enough.\n", n);\
+            break;\
+        case ESCREEN_SUCCESS:\
+            SENSOR_LOGI (BME_NAME, "%s pressure correctly registered to escreen.\n", n);\
+            break;\
+    }\
+} while(0);
+#endif     /* -----  E_SCREEN  ----- */
 
 #define BME_READ_MEASURES(x, addr, w, rcode) do {\
     if (!bme_##x.interface.begin (addr, &w))\

@@ -94,6 +94,10 @@ discoverDsSensors ()
     int cur_try = 0;
     int not_found;
 
+#ifdef  E_SCREEN
+    char label[ESCREEN_MAX_STR_SIZE];
+#endif     /* -----  E_SCREEN  ----- */
+
     nb_discovered = 0;
 
     while (nb_discovered != DS18B20_MEASURES && cur_try < DS18B20_MAX_DISCOVER_TRY)
@@ -136,11 +140,55 @@ discoverDsSensors ()
                 ds_sensors[nb_discovered].initialized = 1;
 
                 SENSOR_LOGI (DS_NAME, 
-                             "New sensor found for a total of %d (address:)" DS_ADDR_FORMAT ".\n", 
+                             "New sensor found for a total of %d (address: " DS_ADDR_FORMAT ").\n", 
                              nb_discovered, 
                              DS_ADDR_ARGS (ds_sensors[nb_discovered].addr));
 
+#ifdef  E_SCREEN
+                // First register the sensor...
+                snprintf (label, 
+                          ESCREEN_MAX_STR_SIZE, 
+                          DS_ADDR_FORMAT, 
+                          DS_ADDR_ARGS (ds_sensors[nb_discovered].addr));
+                if (addNewSensorToScreen (label, 1) == ESCREEN_NO_MEM)
+                {
+                    SENSOR_LOGW (DS_NAME, 
+                                 DS_ADDR_FORMAT " won't be displayed on screen (not enough mem error).\n",
+                                 DS_ADDR_ARGS (ds_sensors[nb_discovered].addr));
+                }
+                else
+                {
+                    SENSOR_LOGI (DS_NAME,
+                                 DS_ADDR_FORMAT " correctly registered to escreen.\n",
+                                 DS_ADDR_ARGS (ds_sensors[nb_discovered].addr));
+                }
+                
+                // ... then the measure
+                switch (addNewMeasureToSensorDisplay (label, "T", "C"))
+                {
+                    case ESCREEN_TOO_MANY_MEASURES:
+                        SENSOR_LOGW (DS_NAME,
+                                     DS_ADDR_FORMAT " temperature already added.\n",
+                                     DS_ADDR_ARGS (ds_sensors[nb_discovered].addr));
+                        break;
+                    case ESCREEN_SENSOR_NOT_FOUND:
+                        SENSOR_LOGW (DS_NAME,
+                                     DS_ADDR_FORMAT 
+                                     " not found, check that the ESCREEN_MAX_STR_SIZE is large enough.\n",
+                                     DS_ADDR_ARGS (ds_sensors[nb_discovered].addr));
+                        break;
+                    case ESCREEN_SUCCESS:
+                        SENSOR_LOGI (DS_NAME,
+                                    DS_ADDR_FORMAT " temperature correctly registered to escreen.\n",
+                                    DS_ADDR_ARGS (ds_sensors[nb_discovered].addr));
+                        break;
+                }
+#endif     /* -----  E_SCREEN  ----- */
+
                 nb_discovered++;
+
+                if (nb_discovered == DS18B20_MEASURES)
+                    break;
             }
         }
 

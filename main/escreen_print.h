@@ -27,29 +27,85 @@
 #include <Fonts/FreeSans12pt7b.h>
 #include "config.h"
 
-#define TFT_CS      14
-#define SCK_CLK     18
-#define MISO_BUSY   19
-#define MOSI_DIN    23
-#define TFT_DC      27
-#define TFT_RST     33
 
-// Initilize the screen
-void initEInkScreen (GxEPD_Class display);
+/*
+ * =====================================================================================
+ *  Enumeration:  escreen_return_codes
+ *  Description:  Errors of the escreen modules
+ * =====================================================================================
+ */
+enum escreen_return_codes
+{
+    ESCREEN_SUCCESS = 0,
+    ESCREEN_NO_MEM = 1,
+    ESCREEN_TOO_MANY_MEASURES = 2,
+    ESCREEN_SENSOR_NOT_FOUND = 4
+};				/* ----------  end of enum escreen_return_codes  ---------- */
 
-// Partial update the screen
-void showPartialUpdate (GxEPD_Class display
-#if DS18B20_MEASURES
-        ,float tSubs
-#endif
-#if SOIL_MEASURES
-        ,float hSubs
-#endif
-#if BME280_MEASURES
-        ,float tIn
-        ,float hIn
-        ,float tOut
-        ,float hOut
-#endif
-        );
+typedef enum escreen_return_codes escreen_return_codes_t;
+
+/*-----------------------------------------------------------------------------
+ *  Structures
+ *-----------------------------------------------------------------------------*/
+/* {{{ -------- Structures -------- */
+
+/*
+ * =====================================================================================
+ *    Structure:  display_measure
+ *  Description:  Structure containing every informations needed to print a measure
+ *      Members:  * char label[ESCREEN_MAX_STR_SIZE]: the label of the measure
+ *                * char unit|ESCREEN_MAX_STR_SIZE]:  the unit of the measure
+ *                * int x: the abscissa of the top left corner of the rectangle
+ *                      containing the measure
+ *                * int y: the ordinate of the top left corner
+ *                * int w: the width of the rectangle
+ *                * int h: the height of the rectangle
+ * =====================================================================================
+ */
+struct display_measure {
+    char label[ESCREEN_MAX_STR_SIZE];
+    char unit[ESCREEN_MAX_STR_SIZE];
+    int x, y;
+    int w, h;
+};				/* ----------  end of struct display_measure  ---------- */
+
+typedef struct display_measure display_measure_t;
+
+
+/*
+ * =====================================================================================
+ *    Structure:  display_sensor
+ *  Description:  Structure contaning all the informations related to the display of 
+ *                  sensor
+ *      Members:  * char label[ESCREEN_MAX_STR_SIZE]: the name of the sensor (should
+ *                      be unique)
+ *                * display_measure_t *measures: an array containing every measure 
+ *                      associated to the current sensor
+ *                * int nb_measures: the number of measures supposed to be monitored
+ *                * int cur_monitored_measures: the number of measures effectively
+ *                      monitored            
+ * =====================================================================================
+ */
+struct display_sensor {
+    char label[ESCREEN_MAX_STR_SIZE];
+    display_measure_t *measures;
+    int nb_measures;
+    int cur_monitored_measures;
+};				/* ----------  end of struct display_sensor  ---------- */
+
+typedef struct display_sensor display_sensor_t;
+/* }}} */
+
+
+/*-----------------------------------------------------------------------------
+ *  Functions
+ *-----------------------------------------------------------------------------*/
+/* {{{ -------- Functions -------- */
+// Add a new sensor to the displau
+int addNewSensorToScreen (const char *label, int nb_measures);
+
+// Add a new measure associated to a sensor
+int addNewMeasureToSensorDisplay (const char *sensor_label, const char *meas_label, const char *unit);
+/* }}} */
+
 #endif
