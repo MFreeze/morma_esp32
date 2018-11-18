@@ -38,6 +38,14 @@
 #define  DS_TEMP_UNIT "C"
 #endif   /* ----- #ifndef DS_TEMP_UNIT  ----- */
 
+#ifndef  DS18B20_MAX_DISCOVER_TRY
+#define  DS18B20_MAX_DISCOVER_TRY 5
+#endif   /* ----- #ifndef DS18B20_MAX_DISCOVER_TRY  ----- */
+
+#ifndef  DS18B20_DISCOVER_DELAY
+#define  DS18B20_DISCOVER_DELAY 1000
+#endif   /* ----- #ifndef DS18B20_DISCOVER_DELAY  ----- */
+
 /*-----------------------------------------------------------------------------
  *  Log Macros
  *-----------------------------------------------------------------------------*/

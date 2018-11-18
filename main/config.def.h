@@ -24,12 +24,12 @@
 /* {{{ -------- Configuration -------- */
 #define E_SCREEN            1       // Control the type of display
 #define WIFI                0       // Use of Wifi
-#define BME280_MEASURES     1       // Should morma try to perform measure with BME280 sensors?
+#define BME280_MEASURES     2       // Should morma try to perform measure with BME280 sensors?
 #define DS18B20_MEASURES    1       // Should morma try to perform measure with DS18B20 sensors?
 #define SOIL_MEASURES       0       // Should morma try to perform soil measures?
 #define SEND_DATA_INFLUXDB  0       // Should morma send data to InfluxDB server?
-#define END_OF_MEASURE_LINE "\n"    
 #define WEB_SERVER          0
 #define USE_SPIFFS          1       // Determine whether we should use internal storage
+#define SENSOR_DEBUG        1
 /* }}} */
 #endif
