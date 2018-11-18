@@ -25,14 +25,66 @@
 #define DS_ERROR_VALUE -100.0
 
 
-/* DS18B20 - Code de retour de la fonction getTemperature() */
-enum DS18B20_RCODES {
-    READ_OK,  // Lecture ok
-    NO_SENSOR_FOUND,  // Pas de capteur
-    INVALID_ADDRESS,  // Adresse reçue invalide
-    INVALID_SENSOR  // Capteur invalide (pas un DS18B20)
-};
 
-DS18B20_RCODES readOneWireTemp (float *temperatures, byte reset_search=1);
+/*-----------------------------------------------------------------------------
+ *  Enums
+ *-----------------------------------------------------------------------------*/
+/* {{{ -------- Enums -------- */
+/*
+ * =====================================================================================
+ *  Enumeration:  ds18b20_return_codes
+ *  Description:  Description of the errors associated to the ds18b20 probe
+ * =====================================================================================
+ */
+enum ds18b20_return_codes
+{
+    DS18B20_SUCCESS,
+    DS18B20_NO_SENSOR,  // Pas de capteur
+    DS18B20_INVALID_ADDRESS,  // Adresse reçue invalide
+    DS18B20_INVALID_SENSOR  // Capteur invalide (pas un DS18B20)
+};				/* ----------  end of enum ds18b20_return_codes  ---------- */
+
+typedef enum ds18b20_return_codes ds18b20_return_codes_t;
+/* }}} */
+
+
+/*-----------------------------------------------------------------------------
+ *  Structures
+ *-----------------------------------------------------------------------------*/
+/* {{{ -------- Structures -------- */
+/*
+ * =====================================================================================
+ *    Structure:  ds18b20_sensor
+ *  Description:  Structure containing every information related to DS18B20 sensors
+ *      Members:  * float t: the measured temperature
+ *                * byte addr[8]: the address of the sensor
+ *                * int initialized: a boolean indicating whether the sensor has
+ *                      been initialized or not
+ * =====================================================================================
+ */
+struct ds18b20_sensor 
+{
+    float t;
+    byte addr[8];
+    int initialized;
+};				/* ----------  end of struct ds18b20_sensor  ---------- */
+
+typedef struct ds18b20_sensor ds18b20_sensor_t;
+/* }}} */
+
+
+/*-----------------------------------------------------------------------------
+ *  Functions
+ *-----------------------------------------------------------------------------*/
+/* {{{ -------- Functions -------- */
+// Perform a search of the ds18b20 sensors
+int discoverDsSensors ();
+
+// Read temperature on ds18b20 sensors
+void readOneWireTemp ();
+
+// print measures in a string
+int printDsMeasures (char *str, size_t size, int first);
+/* }}} */
 
 #endif     /* -----  not __DS18B20_H__  ----- */

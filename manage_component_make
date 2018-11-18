@@ -22,7 +22,9 @@ COMPONENTS_SRC_MK=(PageBuilder)
 SRC_MK_NAME=generic_src_component.mk
 
 # Other components with specific component.mk
-declare -A COMPONENTS_OTHER_MK=([GxEPD]=gxepd_component.mk [AutoConnect]=autoconnect_component.mk)
+# Don't use hashed array for retrocompatibility with bash3 (OS X...)
+COMPONENTS_OTHER_MK_KEYS=(GxEPD AutoConnect)
+COMPONENTS_OTHER_MK_FILES=(gxepd_component.mk autoconnect_component.mk)
 
 MK_FILE=${DEFAULT_MK_NAME}
 for i in ${COMPONENTS_DEFAULT_MK[@]}; do
@@ -46,14 +48,15 @@ for i in ${COMPONENTS_SRC_MK[@]}; do
     fi
 done
 
-for i in ${!COMPONENTS_OTHER_MK[@]}; do
-    MK_FILE=${COMPONENTS_OTHER_MK[$i]}
-    if [ ! -e ${COMPONENT_DIR}/${i}/component.mk ]; then
-        echo "Creating link to ${RESOURCE_DIR}/${MK_FILE} in ${COMPONENT_DIR}/${i}"
-        ln -s ${RESOURCE_DIR}/${MK_FILE} ${COMPONENT_DIR}/${i}/component.mk
-    elif [[ $(readlink ${COMPONENT_DIR}/${i}/component.mk) != ${RESOURCE_DIR}/${MK_FILE} ]]; then
-        echo "Outdated component.mk in ${COMPONENT_DIR}/${i}. Update to ${RESOURCE_DIR}/${MK_FILE}"
-        ln -f -s ${RESOURCE_DIR}/${MK_FILE} ${COMPONENT_DIR}/${i}/component.mk
+for i in $(seq 0 $(( ${#COMPONENTS_OTHER_MK_KEYS[@]} - 1 )) ); do
+    COMPONENT=${COMPONENTS_OTHER_MK_KEYS[$i]}
+    MK_FILE=${COMPONENTS_OTHER_MK_FILES[$i]}
+    if [ ! -e ${COMPONENT_DIR}/${COMPONENT}/component.mk ]; then
+        echo "Creating link to ${RESOURCE_DIR}/${MK_FILE} in ${COMPONENT_DIR}/${COMPONENT}"
+        ln -s ${RESOURCE_DIR}/${MK_FILE} ${COMPONENT_DIR}/${COMPONENT}/component.mk
+    elif [[ $(readlink ${COMPONENT_DIR}/${COMPONENT}/component.mk) != ${RESOURCE_DIR}/${MK_FILE} ]]; then
+        echo "Outdated component.mk in ${COMPONENT_DIR}/${COMPONENT}. Update to ${RESOURCE_DIR}/${MK_FILE}"
+        ln -f -s ${RESOURCE_DIR}/${MK_FILE} ${COMPONENT_DIR}/${COMPONENT}/component.mk
     fi
 done
 

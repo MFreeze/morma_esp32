@@ -90,7 +90,7 @@ int initBmeSensors ();
 int readBmeMeasures ();
 
 // Print measure in a string
-int printBmeMeasures (char *str, size_t size);
+int printBmeMeasures (char *str, size_t size, int first);
 /* }}} */
 
 #endif

@@ -16,17 +16,20 @@
  * =====================================================================================
  */
 #include "config.h"
+#include "constants.h"
+#include "sensor_debug.h"
 #include "local_bme280.h"
 
 #include <stdlib.h>
 #include <esp_log.h>
 
-
+#ifndef BME280_INIT_ADDRESS
 #define BME280_INIT_ADDRESS 0x76
+#endif
 
-#if  BME280_MEASURES > 2
+#ifndef BME280_MODIFIED_ADDRESS
 #define BME280_MODIFIED_ADDRESS 0x77
-#endif     /* -----  BME280_MEASURES > 2  ----- */
+#endif
 
 
 /*-----------------------------------------------------------------------------
@@ -55,9 +58,7 @@
  *  Log Macros
  *-----------------------------------------------------------------------------*/
 /* {{{ -------- Log Macros -------- */
-#define BME_LOGE(...) esp_log_write (ESP_LOG_ERROR, "BME280", ##__VA_ARGS__);
-#define BME_LOGW(...) esp_log_write (ESP_LOG_WARN,  "BME280", ##__VA_ARGS__);
-#define BME_LOGI(...) esp_log_write (ESP_LOG_INFO,  "BME280", ##__VA_ARGS__);
+#define BME_NAME "BME280"
 /* }}} */
 
 
@@ -65,11 +66,19 @@
 *  Pin declaration
  *-----------------------------------------------------------------------------*/
 /* {{{ -------- Pin declaration -------- */
+#ifndef I2C1_DATA
 #define I2C1_DATA  21
-#define I2C1_CLOCK 22
+#endif
 
-#if BME280_MEASURES > 1
+#ifndef I2C1_CLOCK
+#define I2C1_CLOCK 22
+#endif
+
+#ifndef I2C2_DATA
 #define I2C2_DATA   4
+#endif
+
+#ifndef I2C2_CLOCK
 #define I2C2_CLOCK 15
 #endif
 /* }}} */
@@ -99,7 +108,7 @@ static bme280_sensor_t bme_4;
     if (!bme_##x.interface.begin (addr, &w))\
     {\
         rcode |= BME280_ERROR_##x;\
-        BME_LOGE ("Cannot find sensor %s. Check wiring!\n", n);\
+        SENSOR_LOGE (BME_NAME, "Cannot find sensor %s. Check wiring!\n", n);\
     }\
     bme_##x.t = 0.0;\
     bme_##x.h = 0.0;\
@@ -113,7 +122,7 @@ static bme280_sensor_t bme_4;
     {\
         bme_##x.missing = 1;\
         rcode |= BME280_ERROR_##x;\
-        BME_LOGE ("Cannot find sensor %s. Check wiring!\n", bme_##x.name);\
+        SENSOR_LOGE (BME_NAME, "Cannot find sensor %s. Check wiring!\n", bme_##x.name);\
     }\
     else\
     {\
@@ -124,24 +133,28 @@ static bme280_sensor_t bme_4;
     }\
 } while (0);
 
-#define BME_PRINT_TO_STR(x, parser, size, cur_written, total_written) do {\
+#define BME_PRINT_TO_STR(x, parser, size, cur_written, total_written, sep) do {\
     if (!bme_##x.missing) \
     {\
         cur_written = snprintf (parser, \
                                 size, \
-                                "%s_t:%.3f,"\
-                                "%s_h:%.3f,"\
-                                "%s_p:%.3f,",\
+                                "%s_t:%.3f%c"\
+                                "%s_h:%.3f%c"\
+                                "%s_p:%.3f%c",\
                                 bme_##x.name,\
                                 bme_##x.t,\
+                                STR_SEP,\
                                 bme_##x.name,\
                                 bme_##x.h,\
+                                STR_SEP,\
                                 bme_##x.name,\
-                                bme_##x.p);\
+                                bme_##x.p,\
+                                STR_SEP);\
         total_written += cur_written;\
         if (cur_written >= size)\
         {\
-            BME_LOGW ("Buffer has insufficient space to store all BME values for %s. Consider resizing.\n", bme_##x.name);\
+            SENSOR_LOGW (BME_NAME, "Buffer has insufficient space to store all BME values for %s. Consider resizing.\n", bme_##x.name);\
+            *(parser - 1) = '\0';\
             return total_written;\
         }\
         parser += cur_written;\
@@ -231,28 +244,36 @@ readBmeMeasures ()
  *                  character
  *   Parameters:  char *str: the buffer string
  *                size_t size: the remaining space in the string
+ *                int first: a boolean specifying whether it is the first write in the
+ *                  string
  *       Return:  the number of printed character
  * =====================================================================================
  */
 /* --------- printBmeMeasures --------- {{{ */
     int
-printBmeMeasures (char *str, size_t size)
+printBmeMeasures (char *str, size_t size, int first)
 {
     int currently_printed_chars = 0;
     int total_printed_chars = 0;
     int remaining_size = size;
     char *str_parser = str;
 
-    BME_PRINT_TO_STR(1, str_parser, remaining_size, currently_printed_chars, total_printed_chars);
+    if (!first)
+        *(str_parser - 1) = ',';
+
+    BME_PRINT_TO_STR(1, str_parser, remaining_size, currently_printed_chars, total_printed_chars, sep);
 #if  BME280_MEASURES > 1
-    BME_PRINT_TO_STR(2, str_parser, remaining_size, currently_printed_chars, total_printed_chars);
+    BME_PRINT_TO_STR(2, str_parser, remaining_size, currently_printed_chars, total_printed_chars, sep);
 #if  BME280_MEASURES > 2
-    BME_PRINT_TO_STR(3, str_parser, remaining_size, currently_printed_chars, total_printed_chars);
+    BME_PRINT_TO_STR(3, str_parser, remaining_size, currently_printed_chars, total_printed_chars, sep);
 #if  BME280_MEASURES > 3
-    BME_PRINT_TO_STR(4, str_parser, remaining_size, currently_printed_chars, total_printed_chars);
+    BME_PRINT_TO_STR(4, str_parser, remaining_size, currently_printed_chars, total_printed_chars, sep);
 #endif     /* -----  BME280_MEASURES > 3  ----- */
 #endif     /* -----  BME280_MEASURES > 2  ----- */
 #endif     /* -----  BME280_MEASURES > 1  ----- */
+
+    if (total_printed_chars)
+        *(str_parser - 1) = '\0';
 
     return total_printed_chars;
 }		/* -----  end of function printBmeMeasures  ----- */

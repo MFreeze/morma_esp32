@@ -44,7 +44,10 @@
 #include "ds18b20.h"
 #endif
 
+
+#if  BME280_MEASURES
 #include "local_bme280.h"
+#endif     /* -----  BME280_MEASURES  ----- */
 
 #if E_SCREEN
 /* Dépendances pour l'écran e-ink 1.54inch WaveShare*/
@@ -121,12 +124,17 @@ void rootPage() {
 
 void setup()
 {
+    int nb_ds18b20;
     /* Initialisation du port série */
     Serial.begin(115200);
 
 #if BME280_MEASURES
     initBmeSensors ();
 #endif
+
+#if  DS18B20_MEASURES
+    nb_ds18b20 = discoverDsSensors ();
+#endif     /* -----  DS18B20_MEASURES  ----- */
 
 #if SOIL_MEASURES
     // Substrate hygrometry
@@ -185,11 +193,12 @@ void loop()
     char tags[16];
     char fields[256];
     char str_result[BUFFER_SIZE];
+    int remaining_size = BUFFER_SIZE;
+    int cur_written = 0;
+    int first = 1;
+    char *str_parser = str_result;
     char formatTags[] = "read_all=%s";
     char formatFields[] = ""
-#if DS18B20_MEASURES
-        "substrateTemperature=%0.3f,"
-#endif
 #if SOIL_MEASURES
         "substrateHumidity=%0.3f,"
 #endif
@@ -197,9 +206,6 @@ void loop()
 
     char readingStatus[] = "true";
 
-#if DS18B20_MEASURES
-    float tSubs = 0.0;
-#endif
 #if SOIL_MEASURES
     int hSubs = 0;
 #endif
@@ -211,8 +217,13 @@ void loop()
 
 #if DS18B20_MEASURES
     // get values from DS18S20
-    if (readOneWireTemp (&tSubs) != READ_OK)
-        tSubs = DS_ERROR_VALUE;
+    readOneWireTemp ();
+    cur_written = printDsMeasures (str_parser, remaining_size, first);
+    remaining_size -= cur_written;
+    first = 0;
+    str_parser += cur_written;
+
+    printf("%s\n", str_result);
 #endif
 
 
@@ -223,16 +234,16 @@ void loop()
 
 #if BME280_MEASURES
     readBmeMeasures ();
-    printBmeMeasures (str_result, BUFFER_SIZE);
+    cur_written = printBmeMeasures (str_parser, remaining_size, first);
+    remaining_size -= cur_written;
+    first = 0;
+    str_parser += cur_written;
 
     printf("%s\n", str_result);
 #endif
 
     sprintf(tags, formatTags, readingStatus);
     sprintf(fields, formatFields
-#if DS18B20_MEASURES
-            ,tSubs
-#endif
 #if SOIL_MEASURES
             ,hSubs 
 #endif
