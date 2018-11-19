@@ -34,4 +34,9 @@
 #define  ESCREEN_MAX_STR_SIZE 64
 #endif   /* ----- #ifndef E_SCREEN_MAX_STR_SIZE  ----- */
 
+
+#ifndef  END_OF_LINE_MEASURE
+#define  END_OF_LINE_MEASURE "\n"
+#endif   /* ----- #ifndef END_OF_LINE_MEASURE  ----- */
+
 #endif   /* ----- #ifndef __CONSTANTS_H__  ----- */
