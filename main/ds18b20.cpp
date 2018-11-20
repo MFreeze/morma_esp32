@@ -298,8 +298,8 @@ printDsMeasures (char *str, size_t size, int first)
 
         currently_printed_chars = snprintf (str_parser,
                                             remaining_size,
-                                            DS_ADDR_FORMAT "_t:%." MEASURE_PRECISION "f%c",
-                                            DS_ADDR_ARGS (cur->addr),
+                                            DS_SHORT_FORMAT "_t:%." MEASURE_PRECISION "f%c",
+                                            DS_SHORT_ARGS (cur->addr),
                                             cur->t,
                                             STR_SEP);
         total_printed_chars += currently_printed_chars;

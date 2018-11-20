@@ -35,9 +35,11 @@
 #define BME_NAME_1              "out"
 #define BME_NAME_2              "in"
 
-#define MEASURE_DELAY           60      // The time between two loops of measures
-#define SAVED_MEASURE_PERIOD    60      // Only the first measure of each cycle of SAVED_MEASURE_PERIOD will be
+#define MEASURE_DELAY           600     // The time between two loops of measures
+#define SAVED_MEASURE_PERIOD    1       // Only the first measure of each cycle of SAVED_MEASURE_PERIOD will be
                                         // saved. Thus a measure is saved every 
                                         // MEASURE_DELAY * SAVED_MEASURE_PERIOD seconds
+
+#define NB_MEASURES_BEFORE_FILE_ROTATION 2000
 /* }}} */
 #endif
