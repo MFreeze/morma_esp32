@@ -42,7 +42,6 @@
 #define  TFT_CS      14
 #endif   /* ----- #ifndef TFT_CS  ----- */
 
-
 #ifndef  SCK_CLK
 #define  SCK_CLK     18
 #endif   /* ----- #ifndef SCK_CLK  ----- */
@@ -80,10 +79,13 @@
  *  Constants
  *-----------------------------------------------------------------------------*/
 /* {{{ -------- Constants -------- */
-
 #ifndef  ESCREEN_OFFSET
 #define  ESCREEN_OFFSET  14
 #endif   /* ----- #ifndef ESCREEN_OFFSET  ----- */
+
+#ifndef  NB_LOOPS_BEFORE_REDRAW
+#define  NB_LOOPS_BEFORE_REDRAW 20
+#endif   /* ----- #ifndef NB_LOOPS_BEFORE_REDRAW  ----- */
 /* }}} */
 
 
@@ -94,10 +96,12 @@
 static display_sensor_t monitored_sensors[BME280_MEASURES + DS18B20_MEASURES];
 static int currently_monitored = 0;
 static int nb_lines = 0;
+static int loop_counter = 0;
 static GxIO_Class io(SPI, TFT_CS, TFT_DC, TFT_RST);
 static GxEPD_Class display(io, TFT_RST, MISO_BUSY);
 static const GFXfont* f = &FreeSans9pt7b;
 /* }}} */
+
 
 /*-----------------------------------------------------------------------------
  *  Functions
@@ -128,7 +132,7 @@ addNewSensorToScreen (const char *label, int nb_measures, int label_in_title)
     monitored_sensors[currently_monitored].measures = (display_measure_t *) malloc (nb_measures * sizeof (display_measure_t));
     if (!monitored_sensors[currently_monitored].measures)
     {
-        SENSOR_LOGE (DISPLAY_NAME, "Unable to allocate memory for %s sensor's measures.\n", label);
+        SENSOR_LOGE (DISPLAY_NAME, "Unable to allocate memory for %s sensor's measures.", label);
         return ESCREEN_NO_MEM;
     }
 
@@ -174,7 +178,7 @@ addNewMeasureToSensorDisplay (const char *sensor_label, const char *measure_labe
 
     if (!cur_sensor)
     {
-        SENSOR_LOGW (DISPLAY_NAME, "Sensor %s has not been yet registered...\n", sensor_label);
+        SENSOR_LOGW (DISPLAY_NAME, "Sensor %s has not been yet registered...", sensor_label);
         return ESCREEN_SENSOR_NOT_FOUND;
     }
 
@@ -222,8 +226,8 @@ initScreen ()
     int current_y_position = 0;
     int current_x_position = 0;
     int measure_w = 0;
-    char measure_str[ESCREEN_MAX_STR_SIZE];
     display_sensor_t *cur_sensor = NULL;
+    display_sensor_t *last_one_measure_sensor = NULL;
     display_measure_t *cur_measure = NULL;
 
     for (i = 0; i < currently_monitored; i++)
@@ -263,6 +267,7 @@ initScreen ()
                 cur_sensor->measures[0].x = measure_w;
                 cur_sensor->measures[0].y = last_uncomplete_line_position + line_height / 2;
                 last_uncomplete_line_position = -1;
+                last_one_measure_sensor = NULL;
             }
             else
             {
@@ -273,6 +278,7 @@ initScreen ()
                 cur_sensor->measures[0].y = current_y_position + line_height / 2;
                 last_uncomplete_line_position = current_y_position;
                 current_y_position += line_height;
+                last_one_measure_sensor = cur_sensor;
             }
 
             cur_sensor->h = line_height / 2;
@@ -280,6 +286,7 @@ initScreen ()
 
             cur_sensor->measures[0].h = line_height / 2;
             cur_sensor->measures[0].w = measure_w;
+            cur_sensor->measures[0].last_value = 0.0;
         }
         else
         {
@@ -296,9 +303,16 @@ initScreen ()
                 cur_measure->y = current_y_position + line_height/2;
                 cur_measure->w = measure_w;
                 cur_measure->h = line_height / 2;
+                cur_measure->last_value = 0.0;
             }
             current_y_position += line_height;
         }
+    }
+
+    if (last_one_measure_sensor != NULL)
+    {
+        last_one_measure_sensor->w = GxGDEP015OC1_X_PIXELS;
+        last_one_measure_sensor->measures[0].w = GxGDEP015OC1_X_PIXELS;
     }
 
     display.init();
@@ -307,76 +321,7 @@ initScreen ()
     display.update();
     delay(2000);
 
-    display.fillScreen (GxEPD_WHITE);
-    display.update ();
-    delay (1000);
-    
-    // Print fix display
-    for (i = 0, cur_sensor = monitored_sensors; i < currently_monitored; i++, cur_sensor++)
-    {
-        if (cur_sensor->measure_label_in_title)
-        {
-            int remaining_size = ESCREEN_MAX_STR_SIZE;
-            int cur_written = 0;
-            char *str_parser = measure_str;
-
-            cur_written = snprintf (str_parser, remaining_size, "%s (", cur_sensor->label);
-            remaining_size -= cur_written;
-            str_parser += cur_written;
-            // TODO check that string is note truncated
-            for (j = 0, cur_measure = cur_sensor->measures; j < cur_sensor->cur_monitored_measures; j++, cur_measure++)
-            {
-                cur_written = snprintf (str_parser, remaining_size, "%s,", cur_measure->label);
-                remaining_size -= cur_written;
-                str_parser += cur_written;
-            }
-
-            *(str_parser - 1) = ')';
-        }
-        else
-        {
-            snprintf (measure_str, ESCREEN_MAX_STR_SIZE, "%s", cur_sensor->label);
-        }
-        PRINT_STRING_ON_SCREEN (display, 
-                                f, 
-                                measure_str, 
-                                ESCREEN_OFFSET, 
-                                cur_sensor->x,
-                                cur_sensor->y,
-                                cur_sensor->w,
-                                cur_sensor->h,
-                                GxEPD_BLACK,
-                                GxEPD_WHITE);
-        SENSOR_LOGI (DISPLAY_NAME, 
-                     "Writing %s at (%d, %d) in r(%d, %d).\n", 
-                     cur_sensor->label, 
-                     cur_sensor->x, 
-                     cur_sensor->y, 
-                     cur_sensor->w, 
-                     cur_sensor->h);
-
-        for (j = 0, cur_measure = cur_sensor->measures; j < cur_sensor->cur_monitored_measures; j++, cur_measure++)
-        {
-            snprintf (measure_str, ESCREEN_MAX_STR_SIZE, "%s: %.1f", cur_measure->label, 0.0);
-            PRINT_STRING_ON_SCREEN (display, 
-                                    f, 
-                                    measure_str, 
-                                    ESCREEN_OFFSET, 
-                                    cur_measure->x,
-                                    cur_measure->y,
-                                    cur_measure->w,
-                                    cur_measure->h,
-                                    GxEPD_BLACK,
-                                    GxEPD_WHITE);
-            SENSOR_LOGI (DISPLAY_NAME, 
-                         "Writing %s at (%d, %d) in r(%d, %d).\n", 
-                         measure_str, 
-                         cur_measure->x, 
-                         cur_measure->y, 
-                         cur_measure->w, 
-                         cur_measure->h);
-        }
-    }
+    updateScreen (1);
 }		/* -----  end of function initScreen  ----- */
 /* }}} */
 
@@ -384,7 +329,7 @@ initScreen ()
 /*
  * ===  FUNCTION  ======================================================================
  *         Name:  updateMeasure
- *  Description:  Update a measure on a the screen
+ *  Description:  Update a measure before drawing it on the screen
  *   Parameters:  const char *sensor_label: the label of the sensor
  *                const char *measure_label: the label of the measure
  *                float value: the value to print
@@ -400,7 +345,6 @@ updateMeasure (const char *sensor_label, const char *measure_label, float value)
     int i, j;
     display_sensor_t *cur_sensor = NULL;
     display_measure_t *cur_measure = NULL;
-    char measure_str[ESCREEN_MAX_STR_SIZE];
 
     // Look for the requested measure
     for (i = 0, cur_sensor = monitored_sensors; i < currently_monitored; i++, cur_sensor++)
@@ -411,43 +355,127 @@ updateMeasure (const char *sensor_label, const char *measure_label, float value)
             {
                 if (!strcmp (cur_measure->label, measure_label))
                 {
-                    if (!cur_sensor->measure_label_in_title)
-                    {
-                        snprintf (measure_str, ESCREEN_MAX_STR_SIZE, "%s: %.1f", cur_measure->label, value);
-                    }
-                    else
-                    {
-                        snprintf (measure_str, ESCREEN_MAX_STR_SIZE, "%.1f", value);
-                    }
-                    PRINT_STRING_ON_SCREEN (display, 
-                                            f, 
-                                            measure_str, 
-                                            ESCREEN_OFFSET, 
-                                            cur_measure->x,
-                                            cur_measure->y,
-                                            cur_measure->w,
-                                            cur_measure->h,
-                                            GxEPD_BLACK,
-                                            GxEPD_WHITE);
-                    SENSOR_LOGI (DISPLAY_NAME, 
-                                "Writing %s at (%d, %d) in r(%d, %d).\n", 
-                                measure_str, 
-                                cur_measure->x, 
-                                cur_measure->y, 
-                                cur_measure->w, 
-                                cur_measure->h);
-
+                    cur_measure->last_value = value;
+                    SENSOR_LOGI (DISPLAY_NAME, "Update measure %s = %f for sensor %s.", measure_label, cur_measure->last_value, sensor_label);
                     return ESCREEN_SUCCESS;
                 }
             }
 
-            SENSOR_LOGW (DISPLAY_NAME, "%s measure not found for sensor %s.\n", measure_label, sensor_label);
+            SENSOR_LOGW (DISPLAY_NAME, "%s measure not found for sensor %s.", measure_label, sensor_label);
             return ESCREEN_MEASURE_NOT_FOUND;
         }
     }
 
-    SENSOR_LOGW (DISPLAY_NAME, "%s sensor not found.\n", sensor_label);
+    SENSOR_LOGW (DISPLAY_NAME, "%s sensor not found.", sensor_label);
     return ESCREEN_SENSOR_NOT_FOUND;
 }		/* -----  end of function updateMeasure  ----- */
+/* }}} */
+
+
+/*
+ * ===  FUNCTION  ======================================================================
+ *         Name:  updateScreen
+ *  Description:  Perform a complete reset of the screen before writing values again
+ *   Parameters:  int full_update: equal to true if even the label has to be redrawn
+ *       Return:  void
+ * =====================================================================================
+ */
+/* --------- updateScreen --------- {{{ */
+    void
+updateScreen (int full_update)
+{
+    int i, j;
+    char measure_str[ESCREEN_MAX_STR_SIZE];
+    display_sensor_t *cur_sensor = NULL;
+    display_measure_t *cur_measure = NULL;
+
+    int redraw_all = (++loop_counter == NB_LOOPS_BEFORE_REDRAW) ? 1 : full_update;
+
+    if (redraw_all)
+    {
+        display.fillScreen (GxEPD_WHITE);
+        display.update ();
+        delay (2000);
+    }
+    
+    // Print fix display
+    for (i = 0, cur_sensor = monitored_sensors; i < currently_monitored; i++, cur_sensor++)
+    {
+        if (redraw_all)
+        {
+            if (cur_sensor->measure_label_in_title)
+            {
+                int remaining_size = ESCREEN_MAX_STR_SIZE;
+                int cur_written = 0;
+                char *str_parser = measure_str;
+
+                cur_written = snprintf (str_parser, remaining_size, "%s (", cur_sensor->label);
+                remaining_size -= cur_written;
+                str_parser += cur_written;
+                // TODO check that string is note truncated
+                for (j = 0, cur_measure = cur_sensor->measures; j < cur_sensor->cur_monitored_measures; j++, cur_measure++)
+                {
+                    cur_written = snprintf (str_parser, remaining_size, "%s,", cur_measure->label);
+                    remaining_size -= cur_written;
+                    str_parser += cur_written;
+                }
+
+                *(str_parser - 1) = ')';
+            }
+            else
+            {
+                snprintf (measure_str, ESCREEN_MAX_STR_SIZE, "%s", cur_sensor->label);
+            }
+            PRINT_STRING_ON_SCREEN (display, 
+                    f, 
+                    measure_str, 
+                    ESCREEN_OFFSET, 
+                    cur_sensor->x,
+                    cur_sensor->y,
+                    cur_sensor->w,
+                    cur_sensor->h,
+                    GxEPD_BLACK,
+                    GxEPD_WHITE);
+            SENSOR_LOGI (DISPLAY_NAME, 
+                    "Writing %s at (%d, %d) in r(%d, %d).", 
+                    cur_sensor->label, 
+                    cur_sensor->x, 
+                    cur_sensor->y, 
+                    cur_sensor->w, 
+                    cur_sensor->h);
+
+            loop_counter = 0;
+        }
+
+        for (j = 0, cur_measure = cur_sensor->measures; j < cur_sensor->cur_monitored_measures; j++, cur_measure++)
+        {
+            if (cur_sensor->measure_label_in_title)
+            {
+                snprintf (measure_str, ESCREEN_MAX_STR_SIZE, "%.1f", cur_measure->last_value);
+            }
+            else
+            {
+                snprintf (measure_str, ESCREEN_MAX_STR_SIZE, "%s: %.1f", cur_measure->label, cur_measure->last_value);
+            }
+            PRINT_STRING_ON_SCREEN (display, 
+                                    f, 
+                                    measure_str, 
+                                    ESCREEN_OFFSET, 
+                                    cur_measure->x,
+                                    cur_measure->y,
+                                    cur_measure->w,
+                                    cur_measure->h,
+                                    GxEPD_BLACK,
+                                    GxEPD_WHITE);
+            SENSOR_LOGI (DISPLAY_NAME, 
+                         "Writing %s at (%d, %d) in r(%d, %d).", 
+                         measure_str, 
+                         cur_measure->x, 
+                         cur_measure->y, 
+                         cur_measure->w, 
+                         cur_measure->h);
+        }
+    }
+}		/* -----  end of function updateScreen  ----- */
 /* }}} */
 /* }}} */

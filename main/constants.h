@@ -39,4 +39,8 @@
 #define  END_OF_LINE_MEASURE "\n"
 #endif   /* ----- #ifndef END_OF_LINE_MEASURE  ----- */
 
+
+#ifndef  MEASURE_PRECISION
+#define  MEASURE_PRECISION "1"
+#endif   /* ----- #ifndef MEASURE_PRECISION  ----- */
 #endif   /* ----- #ifndef __CONSTANTS_H__  ----- */

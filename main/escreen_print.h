@@ -60,6 +60,8 @@ typedef enum escreen_return_codes escreen_return_codes_t;
  *                * int y: the ordinate of the top left corner
  *                * int w: the width of the rectangle
  *                * int h: the height of the rectangle
+ *                * float last_value: the last value for this measure, can be updated
+ *                      thank to updateMeasure
  * =====================================================================================
  */
 struct display_measure {
@@ -67,6 +69,7 @@ struct display_measure {
     char unit[ESCREEN_MAX_STR_SIZE];
     int x, y;
     int w, h;
+    float last_value;
 };				/* ----------  end of struct display_measure  ---------- */
 
 typedef struct display_measure display_measure_t;
@@ -118,6 +121,9 @@ void initScreen ();
 
 // Update measure
 int updateMeasure (const char *sensor_label, const char *measure_label, float value);
+
+// Update the screen
+void updateScreen (int full_update=0);
 /* }}} */
 
 #endif

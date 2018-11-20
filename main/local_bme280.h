@@ -94,7 +94,7 @@ int printBmeMeasures (char *str, size_t size, int first);
 
 #ifdef  E_SCREEN
 // Print measure on the screen
-void printBmeMeasuresOnScreen ();
+void updateBmeScreenValues ();
 #endif     /* -----  E_SCREEN  ----- */
 /* }}} */
 

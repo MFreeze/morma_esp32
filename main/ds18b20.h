@@ -89,7 +89,7 @@ int printDsMeasures (char *str, size_t size, int first);
 
 #ifdef  E_SCREEN
 // print measure on the displau
-void printDsMeasuresOnScreen ();
+void updateDsScreenValue ();
 #endif     /* -----  E_SCREEN  ----- */
 /* }}} */
 

@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <esp_log.h>
 
+// TODO register only bme that plugged.
 
 /*-----------------------------------------------------------------------------
  *  Constants
@@ -39,6 +40,11 @@
 #ifndef BME280_MODIFIED_ADDRESS
 #define BME280_MODIFIED_ADDRESS 0x77
 #endif
+
+
+#ifndef  BME_LABEL_IN_TITLE
+#define  BME_LABEL_IN_TITLE     1
+#endif   /* ----- #ifndef BME_LABEL_IN_TITLE  ----- */
 
 #ifndef  BME_TEMP_LABEL
 #define  BME_TEMP_LABEL "T"
@@ -142,7 +148,7 @@ static bme280_sensor_t bme_4;
     if (!bme_##x.interface.begin (addr, &w))\
     {\
         rcode |= BME280_ERROR_##x;\
-        SENSOR_LOGE (BME_NAME, "Cannot find sensor %s. Check wiring!\n", n);\
+        SENSOR_LOGE (BME_NAME, "Cannot find sensor %s. Check wiring!", n);\
     }\
     bme_##x.t = 0.0;\
     bme_##x.h = 0.0;\
@@ -153,48 +159,36 @@ static bme280_sensor_t bme_4;
 
 #if  E_SCREEN
 #define BME_ADD_TO_SCREEN(n) do {\
-    if (addNewSensorToScreen (n, 3, 1) == ESCREEN_NO_MEM)\
+    if (addNewSensorToScreen (n, 2, BME_LABEL_IN_TITLE) == ESCREEN_NO_MEM)\
     {\
-        SENSOR_LOGW (BME_NAME, "%s won't be displayed on screen (not enough mem error).\n", n);\
+        SENSOR_LOGW (BME_NAME, "%s won't be displayed on screen (not enough mem error).", n);\
     }\
     else\
     {\
-        SENSOR_LOGI (BME_NAME,"%s correctly registered to escreen.\n", n);\
+        SENSOR_LOGI (BME_NAME,"%s correctly registered to escreen.", n);\
     }\
     switch (addNewMeasureToSensorDisplay (n, BME_TEMP_LABEL, BME_TEMP_UNIT))\
     {\
         case ESCREEN_TOO_MANY_MEASURES:\
-            SENSOR_LOGW (BME_NAME, "%s temperature already added.\n", n);\
+            SENSOR_LOGW (BME_NAME, "%s temperature already added.", n);\
             break;\
         case ESCREEN_SENSOR_NOT_FOUND:\
-            SENSOR_LOGW (BME_NAME, "%s not found, check that the ESCREEN_MAX_STR_SIZE is large enough.\n", n);\
+            SENSOR_LOGW (BME_NAME, "%s not found, check that the ESCREEN_MAX_STR_SIZE is large enough.", n);\
             break;\
         case ESCREEN_SUCCESS:\
-            SENSOR_LOGI (BME_NAME, "%s temperature correctly registered to escreen.\n", n);\
+            SENSOR_LOGI (BME_NAME, "%s temperature correctly registered to escreen.", n);\
             break;\
     }\
     switch (addNewMeasureToSensorDisplay (n, BME_HUMIDITY_LABEL, BME_HUMIDITY_UNIT))\
     {\
         case ESCREEN_TOO_MANY_MEASURES:\
-            SENSOR_LOGW (BME_NAME, "%s humidity already added.\n", n);\
+            SENSOR_LOGW (BME_NAME, "%s humidity already added.", n);\
             break;\
         case ESCREEN_SENSOR_NOT_FOUND:\
-            SENSOR_LOGW (BME_NAME, "%s not found, check that the ESCREEN_MAX_STR_SIZE is large enough.\n", n);\
+            SENSOR_LOGW (BME_NAME, "%s not found, check that the ESCREEN_MAX_STR_SIZE is large enough.", n);\
             break;\
         case ESCREEN_SUCCESS:\
-            SENSOR_LOGI (BME_NAME, "%s humidity correctly registered to escreen.\n", n);\
-            break;\
-    }\
-    switch (addNewMeasureToSensorDisplay (n, BME_PRESSURE_LABEL, BME_PRESSURE_UNIT))\
-    {\
-        case ESCREEN_TOO_MANY_MEASURES:\
-            SENSOR_LOGW (BME_NAME, "%s pressure already added.\n", n);\
-            break;\
-        case ESCREEN_SENSOR_NOT_FOUND:\
-            SENSOR_LOGW (BME_NAME, "%s not found, check that the ESCREEN_MAX_STR_SIZE is large enough.\n", n);\
-            break;\
-        case ESCREEN_SUCCESS:\
-            SENSOR_LOGI (BME_NAME, "%s pressure correctly registered to escreen.\n", n);\
+            SENSOR_LOGI (BME_NAME, "%s humidity correctly registered to escreen.", n);\
             break;\
     }\
 } while(0);
@@ -205,13 +199,12 @@ static bme280_sensor_t bme_4;
     {\
         bme_##x.missing = 1;\
         rcode |= BME280_ERROR_##x;\
-        SENSOR_LOGE (BME_NAME, "Cannot find sensor %s. Check wiring!\n", bme_##x.name);\
+        SENSOR_LOGE (BME_NAME, "Cannot find sensor %s. Check wiring!", bme_##x.name);\
     }\
     else\
     {\
         bme_##x.t = bme_##x.interface.readTemperature ();\
         bme_##x.h = bme_##x.interface.readHumidity ();\
-        bme_##x.p = bme_##x.interface.readPressure () / 100.;\
         bme_##x.missing = 0;\
     }\
 } while (0);
@@ -221,37 +214,32 @@ static bme280_sensor_t bme_4;
     {\
         cur_written = snprintf (parser, \
                                 size, \
-                                "%s_t:%.3f%c"\
-                                "%s_h:%.3f%c"\
-                                "%s_p:%.3f%c",\
+                                "%s_t:%." MEASURE_PRECISION "f%c"\
+                                "%s_h:%." MEASURE_PRECISION "f%c",\
                                 bme_##x.name,\
                                 bme_##x.t,\
                                 STR_SEP,\
                                 bme_##x.name,\
                                 bme_##x.h,\
-                                STR_SEP,\
-                                bme_##x.name,\
-                                bme_##x.p,\
                                 STR_SEP);\
         total_written += cur_written;\
+        parser += cur_written;\
         if (cur_written >= size)\
         {\
-            SENSOR_LOGW (BME_NAME, "Buffer has insufficient space to store all BME values for %s. Consider resizing.\n", bme_##x.name);\
+            SENSOR_LOGW (BME_NAME, "Buffer has insufficient space to store all BME values for %s. Consider resizing.", bme_##x.name);\
             *(parser - 1) = '\0';\
             return total_written;\
         }\
-        parser += cur_written;\
         size -= cur_written;\
     }\
 } while (0);
 
 
 #ifdef  E_SCREEN
-#define BME_UPDATE_ON_SCREEN(x, n) do {\
+#define BME_UPDATE_SCREEN_VALUE(x, n) do {\
     if (!bme_##x.missing) {\
-        updateMeasure (n, "T", bme_##x.t);\
-        updateMeasure (n, "H", bme_##x.h);\
-        updateMeasure (n, "P", bme_##x.p);\
+        updateMeasure (n, BME_TEMP_LABEL, bme_##x.t);\
+        updateMeasure (n, BME_HUMIDITY_LABEL, bme_##x.h);\
     }\
 } while (0);
 #endif     /* -----  E_SCREEN  ----- */
@@ -380,26 +368,26 @@ printBmeMeasures (char *str, size_t size, int first)
 #ifdef  E_SCREEN
 /*
  * ===  FUNCTION  ======================================================================
- *         Name:  printBmeMeasuresOnScreen
+ *         Name:  updateBmeScreenValue
  *  Description:  Print all measures on the screen
  *   Parameters:  
  *       Return:  
  * =====================================================================================
  */
-/* --------- printBmeMeasuresOnScreen --------- {{{ */
+/* --------- updateBmeScreenValue --------- {{{ */
     void
-printBmeMeasuresOnScreen ()
+updateBmeScreenValues ()
 {
-    BME_UPDATE_ON_SCREEN (1, BME_NAME_1);
+    BME_UPDATE_SCREEN_VALUE (1, BME_NAME_1);
 #if BME280_MEASURES > 1
-    BME_UPDATE_ON_SCREEN (2, BME_NAME_2);
+    BME_UPDATE_SCREEN_VALUE (2, BME_NAME_2);
 #if BME280_MEASURES > 2
-    BME_UPDATE_ON_SCREEN (3, BME_NAME_3);
+    BME_UPDATE_SCREEN_VALUE (3, BME_NAME_3);
 #if BME280_MEASURES > 3
-    BME_UPDATE_ON_SCREEN (4, BME_NAME_4);
+    BME_UPDATE_SCREEN_VALUE (4, BME_NAME_4);
 #endif     /* -----  BME280_MEASURES > 3  ----- */
 #endif     /* -----  BME280_MEASURES > 2  ----- */
 #endif     /* -----  BME280_MEASURES > 1  ----- */
-}		/* -----  end of function printBmeMeasuresOnScreen  ----- */
+}		/* -----  end of function updateBmeScreenValue  ----- */
 /* }}} */
 #endif     /* -----  E_SCREEN  ----- */
