@@ -59,6 +59,7 @@ You'll have to ensure that your configuration respects the following points.
 * Under `SDK tool configuration`, check that the python2 interpreter is python2 (if your system uses python3 as default python interpreter)
 * Under `Arduino Configuration`, Autostart Arduino setup and loop on boot is activated
 * Under `Serial flasher config`, Flash size is equal to 4MB
+* Under `Compiler options`, ensure that `Enable C++ exceptions` option is enabled
 
 ### Compilation
 
