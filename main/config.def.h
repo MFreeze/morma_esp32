@@ -41,5 +41,6 @@
                                         // MEASURE_DELAY * SAVED_MEASURE_PERIOD seconds
 
 #define NB_MEASURES_BEFORE_FILE_ROTATION 2000
+// #define ESP_ID "Ecole2"
 /* }}} */
 #endif
