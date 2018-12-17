@@ -22,3 +22,6 @@
 [submodule "components/PageBuilder"]
 	path = components/PageBuilder
 	url = https://github.com/Hieromon/PageBuilder.git
+[submodule "components/Influx-Arduino"]
+	path = components/Influx-Arduino
+	url = https://github.com/teebr/Influx-Arduino.git
