@@ -42,5 +42,19 @@
 
 #define NB_MEASURES_BEFORE_FILE_ROTATION 2000
 // #define ESP_ID "Ecole2"
+
+// If Wifi
+// #define WIFI_NAME "my_network_ssid"
+// #define WIFI_PASS "my_network_key"
+// Endif
+
+// If SEND_DATA_INFLUXDB
+// #define INFLUX_DATABASE "database_name"
+// #define INFLUX_IP "influxdb_server_webaddress"
+// #define INFLUX_USER "influx_user"
+// #define INFLUX_PASS "influx_user_password"
+// #define INFLUX_MEASUREMENT "measure_id"
+// #define INFLUX_TAGS "measures_tags"
+// endif
 /* }}} */
 #endif

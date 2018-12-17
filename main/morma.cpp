@@ -32,7 +32,7 @@
 #endif
 
 #if SEND_DATA_INFLUXDB
-#include "InfluxArduino.hpp"
+#include <InfluxArduino.hpp>
 #include "InfluxCert.hpp"
 #endif
 
@@ -79,14 +79,7 @@ const char WIFI_PASS[] = "j41m3tr0pl3tr3sm4uv41sp4t31";
 #endif
 
 #if SEND_DATA_INFLUXDB
-// InfluxArduino influx;
-
-//connection/ database stuff that needs configuring
-const char INFLUX_DATABASE[] = "valuebugs_test";
-const char INFLUX_IP[] = "influx.valuebugs.be";
-const char INFLUX_USER[] = "etienne";
-const char INFLUX_PASS[] = "6xQH6d0SDB6ttYJXGX04";
-const char INFLUX_MEASUREMENT[] = "test_ESP32_20180713";
+InfluxArduino influx;
 #endif
 
 #if SOIL_MEASURES
@@ -350,7 +343,7 @@ void loop()
 
 #if SEND_DATA_INFLUXDB
     /* Write data to influxDB */
-    if (!influx.write(INFLUX_MEASUREMENT, tags, fields))
+    if (!influx.write(INFLUX_MEASUREMENT, INFLUX_TAGS, fields))
     {
         Serial.print("error: ");
         Serial.println(influx.getResponse());
