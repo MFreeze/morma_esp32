@@ -73,10 +73,6 @@
  *-----------------------------------------------------------------------------*/
 /* {{{ -------- Constants -------- */
 
-#if WIFI || SEND_DATA_INFLUXDB
-const char WIFI_NAME[] = "Ze_Guitounz_Box";
-const char WIFI_PASS[] = "j41m3tr0pl3tr3sm4uv41sp4t31";
-#endif
 
 #if SEND_DATA_INFLUXDB
 InfluxArduino influx;
