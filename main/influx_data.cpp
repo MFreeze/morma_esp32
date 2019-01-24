@@ -115,7 +115,7 @@ sendInfluxData ()
     ESP_LOGI ("influxdb", "Data sent: <%s>\n", fields);
 
     /* Write data to influxDB */
-    result = influx.write("debug_esp32_20190124", "mytags=yes", fields);
+    result = influx.write(INFLUX_MEASUREMENT, INFLUX_TAGS, fields);
 
     if (!result)
         ESP_LOGE("influxdb", "error: %d\n", influx.getResponse());
