@@ -192,6 +192,8 @@ static bme280_sensor_t bme_4;
             break;\
     }\
 } while(0);
+#else
+#define BME_ADD_TO_SCREEN(n)
 #endif     /* -----  E_SCREEN  ----- */
 
 #define BME_READ_MEASURES(x, addr, w, rcode) do {\
@@ -214,8 +216,8 @@ static bme280_sensor_t bme_4;
     {\
         cur_written = snprintf (parser, \
                                 size, \
-                                "%s_t:%." MEASURE_PRECISION "f%c"\
-                                "%s_h:%." MEASURE_PRECISION "f%c",\
+                                "%s_t=%." MEASURE_PRECISION "f%c"\
+                                "%s_h=%." MEASURE_PRECISION "f%c",\
                                 bme_##x.name,\
                                 bme_##x.t,\
                                 STR_SEP,\

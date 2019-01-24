@@ -112,7 +112,7 @@ discoverDsSensors ()
     int cur_try = 0;
     int not_found;
 
-#ifdef  E_SCREEN
+#if  E_SCREEN
     char label[ESCREEN_MAX_STR_SIZE];
 #endif     /* -----  E_SCREEN  ----- */
 
@@ -162,7 +162,7 @@ discoverDsSensors ()
                              nb_discovered, 
                              DS_ADDR_ARGS (ds_sensors[nb_discovered].addr));
 
-#ifdef  E_SCREEN
+#if  E_SCREEN
                 // First register the sensor...
                 snprintf (label, 
                           ESCREEN_MAX_STR_SIZE, 
@@ -298,7 +298,7 @@ printDsMeasures (char *str, size_t size, int first)
 
         currently_printed_chars = snprintf (str_parser,
                                             remaining_size,
-                                            DS_SHORT_FORMAT "_t:%." MEASURE_PRECISION "f%c",
+                                            DS_SHORT_FORMAT "_t=%." MEASURE_PRECISION "f%c",
                                             DS_SHORT_ARGS (cur->addr),
                                             cur->t,
                                             STR_SEP);
@@ -318,7 +318,7 @@ printDsMeasures (char *str, size_t size, int first)
 }		/* -----  end of function printDsMeasures  ----- */
 
 
-#ifdef  E_SCREEN
+#if  E_SCREEN
 /*
  * ===  FUNCTION  ======================================================================
  *         Name:  updateDsScreenValue
