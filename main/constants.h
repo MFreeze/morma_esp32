@@ -30,6 +30,11 @@
 #endif   /* ----- #ifndef BUFFER_SIZE  ----- */
 
 
+#ifndef  INFLUX_BUFFER_SIZE
+#define  INFLUX_BUFFER_SIZE 256
+#endif   /* ----- #ifndef INFLUX_BUFFER_SIZE  ----- */
+
+
 #ifndef  ESCREEN_MAX_STR_SIZE
 #define  ESCREEN_MAX_STR_SIZE 64
 #endif   /* ----- #ifndef E_SCREEN_MAX_STR_SIZE  ----- */

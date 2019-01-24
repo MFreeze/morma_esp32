@@ -11,7 +11,6 @@
 /* TODO
  *  Use mac address as unique id for the weather station
  *  Get certificate for influxdb (see InfluxCert.hpp)
- *  Fix multiple WiFi.h libraries
  *  Fix problem of coexisting WiFi + DS18B20 sensor
  *  Calibrate values of HL-69
  *  Integrate NA values (no value from sensor)
@@ -22,18 +21,33 @@
 #include "config.h"
 #include "constants.h"
 
+
+/*-----------------------------------------------------------------------------
+ *  Macro processing
+ *-----------------------------------------------------------------------------*/
+/* {{{ -------- Macro processing -------- */
+// If USE_AUTOCONNECT has been set, we force the use of Wifi
+#if USE_AUTOCONNECT
+#define WIFI 1
+#endif
+/* }}} */
+
+
+
 /*-----------------------------------------------------------------------------
  *  Libraries
  *-----------------------------------------------------------------------------*/
 /* {{{ -------- Libraries -------- */
 /* Dépendances pour la connexion Wifi et upload vers InfluxDB */
-#if WIFI || SEND_DATA_INFLUXDB || WEB_SERVER
-#include <WiFi.h>
+#if WIFI 
+#include "wifi_connect.h"
 #endif
 
+/* No need to explicitly force use of Wifi when using influxdb since the library 
+ * already forces it.
+ * */
 #if SEND_DATA_INFLUXDB
-#include <InfluxArduino.hpp>
-#include "InfluxCert.hpp"
+#include "influx_data.h"
 #endif
 
 #if DS18B20_MEASURES
@@ -72,20 +86,10 @@
  *  Constants
  *-----------------------------------------------------------------------------*/
 /* {{{ -------- Constants -------- */
-
-
-#if SEND_DATA_INFLUXDB
-InfluxArduino influx;
-#endif
-
 #if SOIL_MEASURES
 //Inside HL-69
 const int soilRead = 26;
-#endif
-
-#if WEB_SERVER
-WebServer Server;
-//AutoConnect Portal(Server);
+int hSubs = 0;
 #endif
 
 
@@ -112,13 +116,7 @@ char file_name[64];
 byte mac[6];
 /* }}} */
 
-
 static int loop_counter = 0;
-
-
-#if SOIL_MEASURES
-int hSubs = 0;
-#endif
 
 
 /*-----------------------------------------------------------------------------
@@ -127,11 +125,6 @@ int hSubs = 0;
 /* {{{ -------- Functions -------- */
 
 #if WEB_SERVER
-void rootPage() {
-    char content[] = "Hello, world";
-    Server.send(200, "text/plain", content);
-}
-
 void handleDownload(){
     char *str, *str_parser;
     int buffer_size = 0, current_size = 0;
@@ -200,23 +193,12 @@ void setup()
     hSubs = analogRead(soilRead);
 #endif
 
-#if WEB_SERVER
-    Server.on("/", rootPage);
-    Server.on("/download", handleDownload);
-    // if (Portal.begin()) {
-    //     Serial.println("WiFi connected: " + WiFi.localIP().toString());
-    // }
+#if WIFI
+    initWifiConnection ();
 #endif
 
+    /* 
 #if WIFI || SEND_DATA_INFLUXDB
-    WiFi.begin(WIFI_NAME, WIFI_PASS);
-    while (WiFi.status() != WL_CONNECTED)
-    {
-        delay(500);
-        Serial.print(".");
-    }
-    Serial.println("WiFi connected!");
-
     // Store mac address for further use
     WiFi.macAddress(mac);
     Serial.print("MAC ");
@@ -226,17 +208,11 @@ void setup()
         Serial.print(mac[i], HEX);
     }
     Serial.println();
-
-#if SEND_DATA_INFLUXDB
-    // try connection with influxdb
-    influx.configure(INFLUX_DATABASE, INFLUX_IP); //third argument (port number) defaults to 8086
-    influx.authorize(INFLUX_USER, INFLUX_PASS);   //if you have set the Influxdb .conf variable auth-enabled to true, uncomment this
-    // influx.addCertificate(ROOT_CERT);             //uncomment if you have generated a CA cert and copied it into InfluxCert.hpp
-    Serial.print("Using HTTPS: ");
-    Serial.println(influx.isSecure()); //will be true if you've added the InfluxCert.hpp file.
-    // WiFi.mode(WIFI_OFF);
 #endif
+ */
 
+# if SEND_DATA_INFLUXDB
+    initInfluxConnection ();
 #endif
     
 #if  E_SCREEN
@@ -288,8 +264,8 @@ void loop()
     int hSubs = 0;
 #endif
 
-#if WEB_SERVER
-    //Portal.handleClient();
+#if WIFI
+    wifiLoopRoutine ();
 #endif
 
     cur_written = snprintf (str_parser, remaining_size, ESP_ID ",%u,", (unsigned int) time (NULL));
@@ -312,7 +288,7 @@ void loop()
 
     printf("%s\n", str_result);
 
-#ifdef  E_SCREEN
+#if  E_SCREEN
     updateDsScreenValue ();
 #endif     /* -----  E_SCREEN  ----- */
 #endif
@@ -332,18 +308,14 @@ void loop()
 
     printf("%s\n", str_result);
 
-#ifdef  E_SCREEN
+#if  E_SCREEN
     updateBmeScreenValues ();
 #endif     /* -----  E_SCREEN  ----- */
 #endif     /* -----  BME280_MEASURES  ----- */
 
 #if SEND_DATA_INFLUXDB
     /* Write data to influxDB */
-    if (!influx.write(INFLUX_MEASUREMENT, INFLUX_TAGS, fields))
-    {
-        Serial.print("error: ");
-        Serial.println(influx.getResponse());
-    }
+    sendInfluxData ();
 #endif
 
 
@@ -378,8 +350,6 @@ void loop()
 #if  E_SCREEN
     updateScreen ();
 #endif   /* ----- E_SCREEN  ----- */
-
-    Serial.print (fields);
 
     delay(MEASURE_DELAY * 1000); 
 }

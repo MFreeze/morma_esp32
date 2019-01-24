@@ -31,6 +31,7 @@
 #define WEB_SERVER              0
 #define USE_SPIFFS              1       // Determine whether we should use internal storage
 #define SENSOR_DEBUG            1
+#define USE_AUTOCONNECT         0       // Use autoconnect component to connect to wifi
 
 #define BME_NAME_1              "out"
 #define BME_NAME_2              "in"
