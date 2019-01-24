@@ -28,6 +28,7 @@
 #define DS18B20_MEASURES        1       // Should morma try to perform measure with DS18B20 sensors?
 #define SOIL_MEASURES           0       // Should morma try to perform soil measures?
 #define SEND_DATA_INFLUXDB      0       // Should morma send data to InfluxDB server?
+#define INFLUX_USE_SSL          1       // Should the connection to InfluxDB use HTTPS?
 #define WEB_SERVER              0
 #define USE_SPIFFS              1       // Determine whether we should use internal storage
 #define SENSOR_DEBUG            1

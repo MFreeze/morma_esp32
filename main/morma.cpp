@@ -253,7 +253,6 @@ void setup()
 
 void loop()
 {
-    char fields[256];
     char str_result[BUFFER_SIZE];
     int remaining_size = BUFFER_SIZE;
     int cur_written = 0;

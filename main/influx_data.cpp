@@ -29,8 +29,23 @@
 #include "wifi_connect.h"
 #include <cstdint>
 #include <InfluxArduino.hpp>
+
+#if  INFLUX_USE_SSL
+#include "influxdb_cert.h"
+#endif     /* -----  INFLUX_USE_SSL  ----- */
 /* }}} */
 
+
+
+/*-----------------------------------------------------------------------------
+ *  MACROS
+ *-----------------------------------------------------------------------------*/
+/* {{{ -------- MACROS -------- */
+
+#ifndef  INFLUX_LABEL
+#define  INFLUX_LABEL "influxdb"
+#endif   /* ----- #ifndef INFLUX_LABEL  ----- */
+/* }}} */
 
 
 /*-----------------------------------------------------------------------------
@@ -64,10 +79,11 @@ initInfluxConnection ()
     influx.configure(INFLUX_DATABASE, INFLUX_IP); //third argument (port number) defaults to 8086
     influx.authorize(INFLUX_USER, INFLUX_PASS);   //if you have set the Influxdb .conf variable auth-enabled to true, uncomment this
 
-    // TODO enable https connection 
-    // influx.addCertificate(ROOT_CERT);             //uncomment if you have generated a CA cert and copied it into InfluxCert.hpp
-    // Serial.print("Using HTTPS: ");
-    // Serial.println(influx.isSecure()); //will be true if you've added the InfluxCert.hpp file.
+
+#if  INFLUX_USE_SSL
+    influx.addCertificate (ROOT_CERT);
+    ESP_LOGI (INFLUX_LABEL, "Using HTTPS: %d\n", influx.isSecure ());
+#endif     /* -----  INFLUX_USE_SSL  ----- */
     
     _configured = 1;
 }		/* -----  end of function initInfluxConnection  ----- */
@@ -112,13 +128,13 @@ sendInfluxData ()
 #endif     /* -----  BME280_MEASURES  ----- */
 
     fields[INFLUX_BUFFER_SIZE - 1] = '\0';
-    ESP_LOGI ("influxdb", "Data sent: <%s>\n", fields);
+    ESP_LOGI (INFLUX_LABEL, "Data sent: <%s>\n", fields);
 
     /* Write data to influxDB */
     result = influx.write(INFLUX_MEASUREMENT, INFLUX_TAGS, fields);
 
     if (!result)
-        ESP_LOGE("influxdb", "error: %d\n", influx.getResponse());
+        ESP_LOGE(INFLUX_LABEL, "error: %d\n", influx.getResponse());
 
     return (result);
 }		/* -----  end of function sendInfluxData  ----- */
