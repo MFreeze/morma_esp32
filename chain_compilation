@@ -1,0 +1,37 @@
+#!/bin/bash
+
+morma_config_file=main/config.h
+
+if [[ "$#" != "1" ]]; then
+    echo "Synopsys: chain_compilation credential file"
+    exit 1
+fi
+
+if [ ! -e "$1" ]; then
+    echo "Unable to open file <$1>"
+    exit 1
+fi
+
+while read line; do
+    echo "Plug the next board and press enter"
+    read < /dev/tty
+
+    values=(${line//;/ })
+    index=0
+
+    for field in "ESP_ID" "WIFI_NAME" "WIFI_PASS"; do
+        tmp_var=$(grep ${field} ${morma_config_file})
+        if [[ "${tmp_var}" = "" ]]; then
+            echo "#define ${field} \"${values[$index]}\"" >> ${morma_config_file}
+        else
+            sed -i "s/${tmp_var}/\#define ${field} \"${values[$index]}\"/" ${morma_config_file}
+        fi
+        (( index ++ ))
+    done
+
+    make flash
+    #cat ${morma_config_file}
+
+done < $1
+
+exit 0
