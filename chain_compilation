@@ -19,7 +19,7 @@ while read line; do
     values=(${line//;/ })
     index=0
 
-    for field in "ESP_ID" "WIFI_NAME" "WIFI_PASS"; do
+    for field in "ESP_ID" "WIFI_NAME" "WIFI_PASS" "INFLUX_MEASUREMENT"; do
         tmp_var=$(grep ${field} ${morma_config_file})
         if [[ "${tmp_var}" = "" ]]; then
             echo "#define ${field} \"${values[$index]}\"" >> ${morma_config_file}
@@ -29,8 +29,8 @@ while read line; do
         (( index ++ ))
     done
 
-    make flash
-    #cat ${morma_config_file}
+    #make flash
+    cat ${morma_config_file}
 
 done < $1
 
