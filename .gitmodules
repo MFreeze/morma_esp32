@@ -25,3 +25,9 @@
 [submodule "components/Influx-Arduino"]
 	path = components/Influx-Arduino
 	url = https://github.com/teebr/Influx-Arduino.git
+[submodule "LOLIN_EPD_Library"]
+	path = LOLIN_EPD_Library
+	url = https://github.com/wemos/LOLIN_EPD_Library
+[submodule "components/LOLIN_EPD_Library"]
+	path = components/LOLIN_EPD_Library
+	url = https://github.com/wemos/LOLIN_EPD_Library

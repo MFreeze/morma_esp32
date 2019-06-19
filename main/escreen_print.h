@@ -18,10 +18,8 @@
 
 #ifndef ESCREEN_PRINT_H
 #define ESCREEN_PRINT_H
-#include <GxEPD.h>
-#include <GxGDEP015OC1/GxGDEP015OC1.h>
-#include <GxIO/GxIO_SPI/GxIO_SPI.h>
-#include <GxIO/GxIO.h>
+#include <Adafruit_GFX.h>
+#include <LOLIN_EPD.h>
 #include "bitmap_VBsplashScreen.h"
 #include "bitmap_measureBG.h"
 #include "config.h"

@@ -23,9 +23,6 @@
 
 #include <string.h>
 #include <Fonts/FreeSans9pt7b.h>
-#include <GxGDEP015OC1/GxGDEP015OC1.cpp>
-#include <GxIO/GxIO_SPI/GxIO_SPI.cpp>
-#include <GxIO/GxIO.cpp>
 
 /*-----------------------------------------------------------------------------
  *  Log Macros
@@ -97,8 +94,7 @@ static display_sensor_t monitored_sensors[BME280_MEASURES + DS18B20_MEASURES];
 static int currently_monitored = 0;
 static int nb_lines = 0;
 static int loop_counter = 0;
-static GxIO_Class io(SPI, TFT_CS, TFT_DC, TFT_RST);
-static GxEPD_Class display(io, TFT_RST, MISO_BUSY);
+static LOLIN_IL3897 display(250, 122, MOSI_DIN, SCK_CLK, TFT_DC, TFT_RST, TFT_CS, MISO_BUSY);
 static const GFXfont* f = &FreeSans9pt7b;
 /* }}} */
 
@@ -248,7 +244,7 @@ initScreen ()
     nb_lines = (nb_required_lines + 1) / 2;
 
     // XXX At this time every line has the same height
-    line_height = (GxGDEP015OC1_Y_PIXELS - 1) / nb_lines;
+    line_height = (display.height() - 1) / nb_lines;
 
     for (i = 0, cur_sensor = monitored_sensors; i < currently_monitored; i++, cur_sensor++)
     {
@@ -258,7 +254,7 @@ initScreen ()
 
         if (cur_sensor->cur_monitored_measures == 1)
         {
-            measure_w = GxGDEP015OC1_X_PIXELS / 2;
+            measure_w = display.width() / 2;
             if (last_uncomplete_line_position != -1)
             {
                 cur_sensor->x = measure_w;
@@ -290,11 +286,11 @@ initScreen ()
         }
         else
         {
-            measure_w = GxGDEP015OC1_X_PIXELS / cur_sensor->cur_monitored_measures;
+            measure_w = display.width() / cur_sensor->cur_monitored_measures;
 
             cur_sensor->x = current_x_position;
             cur_sensor->y = current_y_position;
-            cur_sensor->w = GxGDEP015OC1_X_PIXELS;
+            cur_sensor->w = display.width();
             cur_sensor->h = line_height / 2;
 
             for (j = 0, cur_measure = cur_sensor->measures; j < cur_sensor->cur_monitored_measures; j++, cur_measure++, current_x_position += measure_w)
@@ -311,13 +307,15 @@ initScreen ()
 
     if (last_one_measure_sensor != NULL)
     {
-        last_one_measure_sensor->w = GxGDEP015OC1_X_PIXELS;
-        last_one_measure_sensor->measures[0].w = GxGDEP015OC1_X_PIXELS;
+        last_one_measure_sensor->w = display.width();
+        last_one_measure_sensor->measures[0].w = display.width();
     }
 
-    display.init();
+    display.begin ();
 
-    display.drawExampleBitmap(gImage_VBsplash, 0, 0, 200, 200, GxEPD_BLACK);
+    display.clearBuffer ();
+    display.fillScreen (EPD_WHITE);
+    //display.drawExampleBitmap(gImage_VBsplash, 0, 0, 200, 200, GxEPD_BLACK);
     display.update();
     delay(2000);
 
@@ -389,15 +387,7 @@ updateScreen (int full_update)
     display_sensor_t *cur_sensor = NULL;
     display_measure_t *cur_measure = NULL;
 
-    int redraw_all = (++loop_counter == NB_LOOPS_BEFORE_REDRAW) ? 1 : full_update;
-
-    if (redraw_all)
-    {
-        display.fillScreen (GxEPD_WHITE);
-        display.update ();
-        delay (2000);
-    }
-    
+    display.clearBuffer ();
     // Print fix display
     for (i = 0, cur_sensor = monitored_sensors; i < currently_monitored; i++, cur_sensor++)
     {
