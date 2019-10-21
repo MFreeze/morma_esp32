@@ -22,3 +22,6 @@
 [submodule "components/PageBuilder"]
 	path = components/PageBuilder
 	url = https://github.com/Hieromon/PageBuilder.git
+[submodule "components/LOLIN_EPD_Library"]
+	path = components/LOLIN_EPD_Library
+	url = https://github.com/wemos/LOLIN_EPD_Library
