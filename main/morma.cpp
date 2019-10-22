@@ -20,6 +20,7 @@
 
 #include "config.h"
 #include "constants.h"
+#include "screen_macros.h"
 
 
 /*-----------------------------------------------------------------------------
@@ -61,7 +62,7 @@
 
 #if E_SCREEN
 /* Dépendances pour l'écran e-ink 1.54inch WaveShare*/
-#include "escreen_print.h"
+#include "lolin_screen.h"
 #endif
 
 #if WEB_SERVER
@@ -179,6 +180,12 @@ void setup()
     /* Initialisation du port série */
     Serial.begin(115200);
 
+#if  E_SCREEN
+    initScreen ();
+    StartTracer ("Affichage");
+    StopTracer (1);
+#endif     /* -----  E_SCREEN  ----- */
+
 #if BME280_MEASURES
     initBmeSensors ();
 #endif
@@ -215,10 +222,6 @@ void setup()
     initInfluxConnection ();
 #endif
     
-#if  E_SCREEN
-    initScreen ();
-#endif     /* -----  E_SCREEN  ----- */
-
 
 #if  USE_SPIFFS
     ESP_LOGI(FILE_TAG, "Initializing SPIFFS");
@@ -344,11 +347,6 @@ void loop()
 
         loop_counter = 0;
     }
-
-
-#if  E_SCREEN
-    updateScreen ();
-#endif   /* ----- E_SCREEN  ----- */
 
     delay(MEASURE_DELAY * 1000); 
 }

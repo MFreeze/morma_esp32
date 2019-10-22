@@ -18,7 +18,7 @@ COMPONENTS_DEFAULT_MK=(Adafruit_BME280_Library Adafruit-GFX-Library Adafruit_Sen
 DEFAULT_MK_NAME=generic_component.mk
 
 # Component that require generic src_component.mk (ie sources are packed in src directory)
-COMPONENTS_SRC_MK=(PageBuilder)
+COMPONENTS_SRC_MK=(PageBuilder LOLIN_EPD_Library) 
 SRC_MK_NAME=generic_src_component.mk
 
 # Other components with specific component.mk
