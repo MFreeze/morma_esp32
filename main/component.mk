@@ -7,8 +7,6 @@
 # TODO use foreach make statment
 morma.o: $(COMPONENT_PATH)/config.h $(COMPONENT_PATH)/debug.h $(COMPONENT_PATH)/constants.h $(COMPONENT_PATH)/screen_macros.h
  
-escreen_print.o: $(COMPONENT_PATH)/config.h $(COMPONENT_PATH)/debug.h $(COMPONENT_PATH)/constants.h $(COMPONENT_PATH)/screen_macros.h
-
 local_bme280.o: $(COMPONENT_PATH)/config.h $(COMPONENT_PATH)/debug.h $(COMPONENT_PATH)/constants.h $(COMPONENT_PATH)/screen_macros.h
 
 ds18b20.o: $(COMPONENT_PATH)/config.h $(COMPONENT_PATH)/debug.h $(COMPONENT_PATH)/constants.h $(COMPONENT_PATH)/screen_macros.h

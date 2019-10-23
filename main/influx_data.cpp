@@ -23,7 +23,7 @@
 #include "influx_data.h"
 #include "config.h"
 #include "constants.h"
-#include "sensor_debug.h"
+#include "debug.h"
 #include "local_bme280.h"
 #include "ds18b20.h"
 #include "wifi_connect.h"

@@ -23,8 +23,8 @@ SRC_MK_NAME=generic_src_component.mk
 
 # Other components with specific component.mk
 # Don't use hashed array for retrocompatibility with bash3 (OS X...)
-COMPONENTS_OTHER_MK_KEYS=(GxEPD AutoConnect Influx-Arduino)
-COMPONENTS_OTHER_MK_FILES=(gxepd_component.mk autoconnect_component.mk influxarduino_component.mk)
+COMPONENTS_OTHER_MK_KEYS=(AutoConnect Influx-Arduino)
+COMPONENTS_OTHER_MK_FILES=(autoconnect_component.mk influxarduino_component.mk)
 
 MK_FILE=${DEFAULT_MK_NAME}
 for i in ${COMPONENTS_DEFAULT_MK[@]}; do
