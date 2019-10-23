@@ -18,8 +18,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "lolin_screen.h"
+#include "config.h"
 #include "screen_macros.h"
+#include "lolin_screen.h"
 #include "debug.h"
 
 /*-----------------------------------------------------------------------------
@@ -160,6 +161,8 @@ printMessage (const char *message, int eol, int clear, int refresh)
         cur_nb_line = 0;
     }
 
+    SCREEN_LOGI ("Writing %s at (%d, %d)", message, EPD.getCursorX (), EPD.getCursorY ());
+
     if (eol)
     {
         EPD.println (message);
@@ -254,6 +257,8 @@ clearScreen ()
     EPD.setTextSize (1);
     EPD.setTextWrap (false);
 
+    cur_nb_line = 0;
+
     EPD.display ();
 }		/* -----  end of function clearScreen  ----- */
 /* }}} */
@@ -313,7 +318,7 @@ statusTracing (int status)
  *                      formatted in the same way as the previous one
  *                float *error_vals: the error value for the measure
  *                int nb_meas: the number of measures performed by the sensor
- *       Return:  a non negative id for the sensor, -1 if error occured
+ *       Return:  0 in case of error, 1 otherwise
  * =====================================================================================
  */
 /* --------- registerSensor --------- {{{ */
@@ -330,6 +335,8 @@ registerSensor (const char *name,
     sensor_signature_t *new_sensor = NULL;
     sensor_measure_t *new_measure = NULL;
 
+    SCREEN_LOGW ("Registering %s", name);
+
     StartTracer ("Initialisation capteur: %s", name);
     
     // Realloc memory if needed
@@ -337,7 +344,7 @@ registerSensor (const char *name,
     {
         sensor_signature_t *tmp_sensor;
         sensor_measure_t **tmp_meas;
-        int new_size = tracked_sensors.allocated_space < 1;
+        int new_size = tracked_sensors.allocated_space * 2;
 
         SCREEN_LOGW ("Allocating new memory for sensors");
         tmp_sensor = (sensor_signature_t *) realloc (tracked_sensors.sensors, new_size * sizeof (sensor_signature_t));
@@ -364,20 +371,21 @@ registerSensor (const char *name,
 
     // Register the sensor
     new_sensor = tracked_sensors.sensors + id;
-    new_sensor->name = (char *) malloc (len * sizeof(char));
+    new_sensor->name = (char *) malloc ((len + 1) * sizeof(char));
     if (!new_sensor->name)
     {
         SCREEN_LOGE ("Unable to allocate memory for sensor name string");
         StopTracer (0);
         return 0;
     }
+    strcpy (new_sensor->name, name);
+
     new_sensor->len = len;
     new_sensor->nb_measures = nb_meas;
 
     // Register the associated measures
+    tracked_sensors.measures[id] = (sensor_measure_t *) malloc (nb_meas * sizeof (sensor_measure_t));
     new_measure = tracked_sensors.measures[id];
-
-    new_measure = (sensor_measure_t *) malloc (nb_meas * sizeof (sensor_measure_t));
     if (!new_measure)
     {
         SCREEN_LOGE ("unable to allocate memory for sensor measures");
@@ -391,7 +399,7 @@ registerSensor (const char *name,
     {
         sensor_measure_t *cur_meas = new_measure + i;
 
-        cur_meas->label = (char *) malloc (lengths[ind] * sizeof (char));
+        cur_meas->label = (char *) malloc ((lengths[ind] + 1) * sizeof (char));
         if (!cur_meas->label)
         {
             SCREEN_LOGE ("Cannot allocate memory for measure %d name", i);
@@ -406,8 +414,9 @@ registerSensor (const char *name,
             return 0;
         }
         cur_meas->label_len = lengths[ind];
+        strcpy (cur_meas->label, measures_str[ind]);
 
-        cur_meas->unit	= (char *) malloc (sizeof(char) * lengths[ind + 1]);
+        cur_meas->unit	= (char *) malloc (sizeof(char) * (lengths[ind + 1] + 1));
         if (!cur_meas->unit) {
             SCREEN_LOGE ("Cannot allocate memory for measure %d unit", i);
             for (j = 0; j < i; j++)
@@ -422,13 +431,116 @@ registerSensor (const char *name,
             return 0;
         }
         cur_meas->unit_len = lengths[ind + 1];
+        strcpy (cur_meas->unit, measures_str[ind + 1]);
 
-        cur_meas->val = 0.0;
         cur_meas->default_err = error_vals[i];
+        cur_meas->val = cur_meas->default_err;
     }
+
+    tracked_sensors.nb_sensors++;
+
+    SCREEN_LOGI ("New number of sensors: %d", tracked_sensors.nb_sensors);
 
     StopTracer (1);
     return 1;
 }		/* -----  end of function registerSensor  ----- */
+/* }}} */
+
+
+/*
+ * ===  FUNCTION  ======================================================================
+ *         Name:  updateScreenMeasure
+ *  Description:  This function allows a sensor to update the value of one of its 
+ *                  measure in the measure db of the screen library.
+ *   Parameters:  const char *sensor_name: the name of the sensor
+ *                const char *measure_name: the name of the measure
+ *                float val: the new value of the masure
+ *       Return:  0 in case of error, 1 otherwise
+ * =====================================================================================
+ */
+/* --------- updateScreenMeasure --------- {{{ */
+    int
+updateScreenMeasure (const char *sensor_name, const char *measure_name, float val)
+{
+    int i = 0, j = 0;
+    int keep_on_searching = 1;
+
+    for (i = 0; keep_on_searching && i < tracked_sensors.nb_sensors; i++)
+    {
+        keep_on_searching = strcmp (sensor_name, tracked_sensors.sensors[i].name);
+        if (!keep_on_searching)
+        {
+            int searching_measure = 1;
+            for (j = 0; searching_measure && j < tracked_sensors.sensors[i].nb_measures; j++)
+            {
+                searching_measure = strcmp (measure_name, tracked_sensors.measures[i][j].label);
+                if (!searching_measure)
+                {
+                    tracked_sensors.measures[i][j].val = val;
+                    return 1;
+                }
+            }
+        }
+    }
+
+    return 0;
+}		/* -----  end of function updateScreenMeasure  ----- */
+/* }}} */
+
+
+/*
+ * ===  FUNCTION  ======================================================================
+ *         Name:  printMeasures
+ *  Description:  Print all the tracked measures on the screen 
+ *   Parameters:  
+ *       Return:  
+ * =====================================================================================
+ */
+/* --------- printMeasures --------- {{{ */
+    void
+printMeasures ()
+{
+    int i = 0, j = 0;
+
+    clearScreen ();
+
+    for (i = 0; i < tracked_sensors.nb_sensors; i++)
+    {
+        char to_print[256] = {0}, buffer[256] = {0};
+        char *str_p = to_print;
+        size_t len;
+        int space_left = 255;                       /* 256 minus the \0 */
+
+        snprintf (buffer, 256, "%s =>", tracked_sensors.sensors[i].name);
+        strncpy (str_p, buffer, space_left);
+
+        len = strlen (buffer);
+        str_p += len;
+        space_left -= len;
+
+        for (j = 0; j < tracked_sensors.sensors[i].nb_measures && space_left > 0; j++)
+        {
+            sensor_measure_t cur = tracked_sensors.measures[i][j];
+            if (cur.val != cur.default_err)
+            {
+                snprintf (buffer, 256, " %s:%.1lf %s ", cur.label, cur.val, cur.unit);
+            }
+            else
+            {
+                snprintf (buffer, 256, " %s:NaN %s ", cur.label, cur.unit);
+            }
+
+            strncpy (str_p, buffer, space_left);
+            len = strlen (buffer);
+            str_p += len;
+            space_left -= len;
+            SCREEN_LOGI ("Mesures: %s", to_print);
+        }
+
+        printMessage (to_print, 1, 0, 0);
+    }
+
+    printMessage ("", 0, 0, 1);                 /* Refresh screen */
+}		/* -----  end of function printMeasures  ----- */
 /* }}} */
 /* }}} */

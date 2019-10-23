@@ -38,6 +38,12 @@ void initTracing (const char *);
 void statusTracing (int);
 
 // Register a new sensor
-int registerNewSensor (const char *, int, const char**, int*, float *, int);
+int registerSensor (const char *, int, const char**, int*, float *, int);
+
+// Update measure value
+int updateScreenMeasure (const char *, const char *, float);
+
+// Print values on the screen
+void printMeasures ();
 
 #endif   /* ----- #ifndef __LOLIN_SCREEN_H__  ----- */

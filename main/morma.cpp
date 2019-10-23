@@ -21,6 +21,7 @@
 #include "config.h"
 #include "constants.h"
 #include "screen_macros.h"
+#include "debug.h"
 
 
 /*-----------------------------------------------------------------------------
@@ -177,17 +178,23 @@ void handleDownload(){
 
 void setup()
 {
+    int ret_val;
     /* Initialisation du port série */
     Serial.begin(115200);
 
-#if  E_SCREEN
-    initScreen ();
-    StartTracer ("Affichage");
-    StopTracer (1);
-#endif     /* -----  E_SCREEN  ----- */
+    InitScreen (ret_val);
+    if (ret_val)
+    {
+        StartTracer ("Affichage");                  /* The display cannot be started before screen initialization */
+        StopTracer (1);
+    }
+    else
+    {
+        // TODO Handle correctly the error
+        SCREEN_LOGE ("Error while initializing the screen.");
+    }
 
 #if BME280_MEASURES
-    StartTracer ("Sondes BME");
     initBmeSensors ();
 #endif
 
@@ -311,9 +318,9 @@ void loop()
 
     printf("%s\n", str_result);
 
-#if  E_SCREEN
-    updateBmeScreenValues ();
-#endif     /* -----  E_SCREEN  ----- */
+    delay (1000);
+
+    PrintMeasure ();
 #endif     /* -----  BME280_MEASURES  ----- */
 
 #if SEND_DATA_INFLUXDB

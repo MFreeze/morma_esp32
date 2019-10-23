@@ -18,4 +18,4 @@
 
 #include "screen_macros.h"
 
-char *screen_macros_buffer[256] = {0};
+char *__local_screen_macros_buffer[256] = {0};
