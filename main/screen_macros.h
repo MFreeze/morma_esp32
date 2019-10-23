@@ -24,18 +24,27 @@
 #ifdef  E_SCREEN
 #include "lolin_screen.h"
 
-#define StartTracer(x) do {\
-    initTracing (x); \
+extern char screen_macros_buffer[256];
+
+#define StartTracer(str_format, ...) do {\
+    snprintf (screen_macros_buffer, 256, str_format, ##__VA_ARGS__); \
+    initTracing (screen_macros_buffer); \
 } while (0);
 
 #define StopTracer(x) do {\
     statusTracing (x); \
 } while (0);
 
+#define ClearScreen() do {\
+    clearScreen (); \
+} while (0);
+
 #else
 
-#define StartTracer(x)
+#define StartTracer(str_format, ...)
 #define StopTracer(x)
+#define ClearScreen()
+
 #endif     /* -----  not E_SCREEN  ----- */
 
 #endif   /* ----- #ifndef __SCREEN_MACROS_H__  ----- */

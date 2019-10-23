@@ -187,6 +187,7 @@ void setup()
 #endif     /* -----  E_SCREEN  ----- */
 
 #if BME280_MEASURES
+    StartTracer ("Sondes BME");
     initBmeSensors ();
 #endif
 
