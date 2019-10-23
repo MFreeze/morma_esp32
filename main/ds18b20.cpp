@@ -17,17 +17,15 @@
  */
 
 #include "config.h"
+#include "debug.h"
 #include "constants.h"
-#include "sensor_debug.h"
 #include "ds18b20.h"
+#include "screen_macros.h"
 
-
-#if  E_SCREEN
-#include "escreen_print.h"
-#endif     /* -----  E_SCREEN  ----- */
 
 #include <stdlib.h>
 #include <esp_log.h>
+#include <string.h>
 
 
 #ifndef  DS_TEMP_LABEL
@@ -37,6 +35,11 @@
 #ifndef  DS_TEMP_UNIT
 #define  DS_TEMP_UNIT "C"
 #endif   /* ----- #ifndef DS_TEMP_UNIT  ----- */
+
+#ifndef  DS_TEMP_ERROR_VAL
+#define  DS_TEMP_ERROR_VAL  -280
+#endif   /* ----- #ifndef DS_TEMP_ERROR_VAL  ----- */
+
 
 #ifndef  DS18B20_MAX_DISCOVER_TRY
 #define  DS18B20_MAX_DISCOVER_TRY 5
@@ -112,11 +115,15 @@ discoverDsSensors ()
     int cur_try = 0;
     int not_found;
 
-#if  E_SCREEN
+    const char *ds_measures_str[2] = { DS_TEMP_LABEL, DS_TEMP_UNIT};
+    int ds_length[2] = { (int) strlen (DS_TEMP_LABEL),
+                         (int) strlen (DS_TEMP_UNIT)};
+    float ds_error[1] = { DS_ERROR_VALUE };
     char label[ESCREEN_MAX_STR_SIZE];
-#endif     /* -----  E_SCREEN  ----- */
 
     nb_discovered = 0;
+
+    SENSOR_LOGI (DS_NAME, "Start discovering sensors");
 
     while (nb_discovered != DS18B20_MEASURES && cur_try < DS18B20_MAX_DISCOVER_TRY)
     {
@@ -154,55 +161,31 @@ discoverDsSensors ()
             // New sensor found
             if (not_found)
             {
-                ds_sensors[nb_discovered].t = 0.0;
+                int ret_val = 1;
+                ds_sensors[nb_discovered].t = DS_TEMP_ERROR_VAL;
                 ds_sensors[nb_discovered].initialized = 1;
 
                 SENSOR_LOGI (DS_NAME, 
                              "New sensor found for a total of %d (address: " DS_ADDR_FORMAT ").", 
-                             nb_discovered, 
+                             nb_discovered + 1, 
                              DS_ADDR_ARGS (ds_sensors[nb_discovered].addr));
 
-#if  E_SCREEN
                 // First register the sensor...
-                snprintf (label, 
+                snprintf (ds_sensors[nb_discovered].name, 
                           ESCREEN_MAX_STR_SIZE, 
                           DS_SHORT_FORMAT, 
                           DS_SHORT_ARGS (ds_sensors[nb_discovered].addr));
-                if (addNewSensorToScreen (label, 1) == ESCREEN_NO_MEM)
+
+                RegisterSensor (ret_val, label, strlen (label), ds_measures_str, ds_length, ds_error, 1);
+                if (!ret_val)
                 {
-                    SENSOR_LOGW (DS_NAME, 
-                                 DS_ADDR_FORMAT " won't be displayed on screen (not enough mem error).",
-                                 DS_ADDR_ARGS (ds_sensors[nb_discovered].addr));
+                    SENSOR_LOGE (DS_NAME, "Unable to register DS18B20 %s", ds_sensors[nb_discovered].name);
                 }
                 else
                 {
-                    SENSOR_LOGI (DS_NAME,
-                                 DS_ADDR_FORMAT " correctly registered to escreen.",
-                                 DS_ADDR_ARGS (ds_sensors[nb_discovered].addr));
+                    SENSOR_LOGI (DS_NAME, "DS18B20 %s registered.", ds_sensors[nb_discovered].name);
                 }
                 
-                // ... then the measure
-                switch (addNewMeasureToSensorDisplay (label, DS_TEMP_LABEL, DS_TEMP_UNIT))
-                {
-                    case ESCREEN_TOO_MANY_MEASURES:
-                        SENSOR_LOGW (DS_NAME,
-                                     DS_ADDR_FORMAT " temperature already added.",
-                                     DS_ADDR_ARGS (ds_sensors[nb_discovered].addr));
-                        break;
-                    case ESCREEN_SENSOR_NOT_FOUND:
-                        SENSOR_LOGW (DS_NAME,
-                                     DS_ADDR_FORMAT 
-                                     " not found, check that the ESCREEN_MAX_STR_SIZE is large enough.",
-                                     DS_ADDR_ARGS (ds_sensors[nb_discovered].addr));
-                        break;
-                    case ESCREEN_SUCCESS:
-                        SENSOR_LOGI (DS_NAME,
-                                    DS_ADDR_FORMAT " temperature correctly registered to escreen.",
-                                    DS_ADDR_ARGS (ds_sensors[nb_discovered].addr));
-                        break;
-                }
-#endif     /* -----  E_SCREEN  ----- */
-
                 nb_discovered++;
 
                 if (nb_discovered == DS18B20_MEASURES)
@@ -214,7 +197,7 @@ discoverDsSensors ()
         SENSOR_LOGI (DS_NAME, "End of try %d", cur_try);
     }
 
-    SENSOR_LOGI (DS_NAME, "Found %d devices.", nb_discovered);
+    SENSOR_LOGI (DS_NAME, "Stop sensor discovering. Found %d devices.", nb_discovered);
 
     return nb_discovered;
 }		/* -----  end of function discoverDsSensors  ----- */
@@ -233,8 +216,10 @@ discoverDsSensors ()
     void
 readOneWireTemp ()
 {
-    int i;
+    int i, ret_val = 1;
     byte data[9];       // Data read from the scratchpad
+
+    SENSOR_LOGI (DS_NAME, "Reading OneWire Temperatures");
 
     for (ds18b20_sensor_t *cur = ds_sensors; cur != ds_sensors + nb_discovered; cur++)
     {
@@ -261,6 +246,16 @@ readOneWireTemp ()
         /* Calcul de la température en degré Celsius */
         cur->t = (int16_t) ((data[1] << 8) | data[0]) * 0.0625; 
         SENSOR_LOGI (DS_NAME, "[" DS_ADDR_FORMAT "] Read temperature: %.3f.", DS_ADDR_ARGS (cur->addr), cur->t);
+
+        UpdateScreenMeasure (ret_val, cur->name, DS_TEMP_LABEL, cur->t);
+        if (!ret_val)
+        {
+            SENSOR_LOGE (DS_NAME, "Unable to update temp for DS18B20 %s.", cur->name);
+        }
+        else
+        {
+            SENSOR_LOGI (DS_NAME, "Temp updated with value %f for DS18B20 %s.", cur->t, cur->name);
+        }
     }
 }		/* -----  end of function readOneWireTemp  ----- */
 /* }}} */
@@ -316,33 +311,4 @@ printDsMeasures (char *str, size_t size, int first)
     *(str_parser - 1) = '\0';
     return total_printed_chars;
 }		/* -----  end of function printDsMeasures  ----- */
-
-
-#if  E_SCREEN
-/*
- * ===  FUNCTION  ======================================================================
- *         Name:  updateDsScreenValue
- *  Description:  Print the DS Measures on screen
- *   Parameters:  
- *       Return:  
- * =====================================================================================
- */
-/* --------- updateDsScreenValue --------- {{{ */
-    void
-updateDsScreenValue ()
-{
-    char label[ESCREEN_MAX_STR_SIZE];
-    ds18b20_sensor_t *cur;
-
-    for (cur = ds_sensors; cur != ds_sensors + nb_discovered; cur ++)
-    {
-        snprintf (label, 
-                  ESCREEN_MAX_STR_SIZE, 
-                  DS_SHORT_FORMAT, 
-                  DS_SHORT_ARGS (cur->addr));
-        updateMeasure (label, DS_TEMP_LABEL, cur->t);
-    }
-}		/* -----  end of function updateDsScreenValue  ----- */
-/* }}} */
-#endif     /* -----  E_SCREEN  ----- */
 /* }}} */

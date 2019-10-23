@@ -250,6 +250,7 @@ initScreen ()
     void
 clearScreen ()
 {
+    SCREEN_LOGI ("Clearing th screen.");
     EPD.clearBuffer ();
 
     EPD.setCursor (0, 0);

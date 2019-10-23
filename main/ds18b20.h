@@ -20,11 +20,7 @@
 #ifndef __DS18B20_H__
 #define __DS18B20_H__
 #include <OneWire.h>
-
-// default values
-#define DS_ERROR_VALUE -100.0
-
-
+#include "constants.h"
 
 /*-----------------------------------------------------------------------------
  *  Enums
@@ -68,6 +64,7 @@ struct ds18b20_sensor
     float t;
     byte addr[8];
     int initialized;
+    char name[ESCREEN_MAX_STR_SIZE];
 };				/* ----------  end of struct ds18b20_sensor  ---------- */
 
 typedef struct ds18b20_sensor ds18b20_sensor_t;
@@ -86,11 +83,6 @@ void readOneWireTemp ();
 
 // print measures in a string
 int printDsMeasures (char *str, size_t size, int first);
-
-#ifdef  E_SCREEN
-// print measure on the displau
-void updateDsScreenValue ();
-#endif     /* -----  E_SCREEN  ----- */
 /* }}} */
 
 #endif     /* -----  not __DS18B20_H__  ----- */
