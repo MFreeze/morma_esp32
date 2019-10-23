@@ -119,7 +119,6 @@ discoverDsSensors ()
     int ds_length[2] = { (int) strlen (DS_TEMP_LABEL),
                          (int) strlen (DS_TEMP_UNIT)};
     float ds_error[1] = { DS_ERROR_VALUE };
-    char label[ESCREEN_MAX_STR_SIZE];
 
     nb_discovered = 0;
 
@@ -170,13 +169,18 @@ discoverDsSensors ()
                              nb_discovered + 1, 
                              DS_ADDR_ARGS (ds_sensors[nb_discovered].addr));
 
-                // First register the sensor...
-                snprintf (ds_sensors[nb_discovered].name, 
-                          ESCREEN_MAX_STR_SIZE, 
-                          DS_SHORT_FORMAT, 
+                snprintf (ds_sensors[nb_discovered].name,
+                          ESCREEN_MAX_STR_SIZE,
+                          DS_SHORT_FORMAT,
                           DS_SHORT_ARGS (ds_sensors[nb_discovered].addr));
 
-                RegisterSensor (ret_val, label, strlen (label), ds_measures_str, ds_length, ds_error, 1);
+                RegisterSensor (ret_val, 
+                                ds_sensors[nb_discovered].name, 
+                                strlen (ds_sensors[nb_discovered].name), 
+                                ds_measures_str, 
+                                ds_length, 
+                                ds_error, 
+                                1);
                 if (!ret_val)
                 {
                     SENSOR_LOGE (DS_NAME, "Unable to register DS18B20 %s", ds_sensors[nb_discovered].name);

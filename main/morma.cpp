@@ -297,10 +297,6 @@ void loop()
     str_parser += cur_written;
 
     printf("%s\n", str_result);
-
-#if  E_SCREEN
-    updateDsScreenValue ();
-#endif     /* -----  E_SCREEN  ----- */
 #endif
 
 
@@ -319,8 +315,6 @@ void loop()
     printf("%s\n", str_result);
 
     delay (1000);
-
-    PrintMeasure ();
 #endif     /* -----  BME280_MEASURES  ----- */
 
 #if SEND_DATA_INFLUXDB
@@ -355,6 +349,8 @@ void loop()
 
         loop_counter = 0;
     }
+
+    PrintMeasure ();
 
     delay(MEASURE_DELAY * 1000); 
 }

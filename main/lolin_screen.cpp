@@ -161,7 +161,13 @@ printMessage (const char *message, int eol, int clear, int refresh)
         cur_nb_line = 0;
     }
 
-    SCREEN_LOGI ("Writing %s at (%d, %d)", message, EPD.getCursorX (), EPD.getCursorY ());
+    SCREEN_LOGI ("Writing %s at (%d, %d) [eol=%d, clear=%d, refresh=%d]", 
+                 message, 
+                 EPD.getCursorX (), 
+                 EPD.getCursorY (),
+                 eol,
+                 clear,
+                 refresh);
 
     if (eol)
     {
@@ -172,7 +178,6 @@ printMessage (const char *message, int eol, int clear, int refresh)
         EPD.print (message);
     }
 
-    EPD.update ();
     if (refresh)
     {
         EPD.display ();
@@ -260,6 +265,8 @@ clearScreen ()
 
     cur_nb_line = 0;
 
+    EPD.print ("");
+    EPD.update ();
     EPD.display ();
 }		/* -----  end of function clearScreen  ----- */
 /* }}} */
@@ -336,7 +343,7 @@ registerSensor (const char *name,
     sensor_signature_t *new_sensor = NULL;
     sensor_measure_t *new_measure = NULL;
 
-    SCREEN_LOGW ("Registering %s", name);
+    SCREEN_LOGI ("Registering %s", name);
 
     StartTracer ("Initialisation capteur: %s", name);
     
@@ -347,7 +354,7 @@ registerSensor (const char *name,
         sensor_measure_t **tmp_meas;
         int new_size = tracked_sensors.allocated_space * 2;
 
-        SCREEN_LOGW ("Allocating new memory for sensors");
+        SCREEN_LOGI ("Allocating new memory for sensors");
         tmp_sensor = (sensor_signature_t *) realloc (tracked_sensors.sensors, new_size * sizeof (sensor_signature_t));
 
         if (!tmp_sensor)
@@ -359,6 +366,7 @@ registerSensor (const char *name,
 
         tracked_sensors.sensors = tmp_sensor;
 
+        SCREEN_LOGI ("Allocating new memory for sensors measures");
         tmp_meas = (sensor_measure_t **) realloc (tracked_sensors.measures, new_size * sizeof (sensor_measure_t *));
         if (!tmp_meas)
         {
@@ -368,11 +376,13 @@ registerSensor (const char *name,
         }
 
         tracked_sensors.allocated_space = new_size;
+        SCREEN_LOGI ("New allocated space: %d", new_size);
     }
 
     // Register the sensor
     new_sensor = tracked_sensors.sensors + id;
     new_sensor->name = (char *) malloc ((len + 1) * sizeof(char));
+    SCREEN_LOGI ("Allocate memory for sensor %s", name);
     if (!new_sensor->name)
     {
         SCREEN_LOGE ("Unable to allocate memory for sensor name string");
@@ -386,6 +396,7 @@ registerSensor (const char *name,
 
     // Register the associated measures
     tracked_sensors.measures[id] = (sensor_measure_t *) malloc (nb_meas * sizeof (sensor_measure_t));
+    SCREEN_LOGI ("Allocating new memory for measures of sensor %s", name);
     new_measure = tracked_sensors.measures[id];
     if (!new_measure)
     {
@@ -401,6 +412,7 @@ registerSensor (const char *name,
         sensor_measure_t *cur_meas = new_measure + i;
 
         cur_meas->label = (char *) malloc ((lengths[ind] + 1) * sizeof (char));
+        SCREEN_LOGI ("Allocating memory for label of measure %s", measures_str[ind]);
         if (!cur_meas->label)
         {
             SCREEN_LOGE ("Cannot allocate memory for measure %d name", i);
@@ -418,6 +430,7 @@ registerSensor (const char *name,
         strcpy (cur_meas->label, measures_str[ind]);
 
         cur_meas->unit	= (char *) malloc (sizeof(char) * (lengths[ind + 1] + 1));
+        SCREEN_LOGI ("Allocating memory for unit of measure %s", measures_str[ind]);
         if (!cur_meas->unit) {
             SCREEN_LOGE ("Cannot allocate memory for measure %d unit", i);
             for (j = 0; j < i; j++)
@@ -466,23 +479,30 @@ updateScreenMeasure (const char *sensor_name, const char *measure_name, float va
     int i = 0, j = 0;
     int keep_on_searching = 1;
 
+    SCREEN_LOGI ("Try to update %s.%s with val %f", sensor_name, measure_name, val);
     for (i = 0; keep_on_searching && i < tracked_sensors.nb_sensors; i++)
     {
         keep_on_searching = strcmp (sensor_name, tracked_sensors.sensors[i].name);
         if (!keep_on_searching)
         {
             int searching_measure = 1;
+            SCREEN_LOGI ("Sensor %s found, looking for measure %s", sensor_name, measure_name);
             for (j = 0; searching_measure && j < tracked_sensors.sensors[i].nb_measures; j++)
             {
                 searching_measure = strcmp (measure_name, tracked_sensors.measures[i][j].label);
                 if (!searching_measure)
                 {
                     tracked_sensors.measures[i][j].val = val;
+                    SCREEN_LOGI ("%s.%s updated with %f. Exiting.", sensor_name, measure_name, val);
                     return 1;
                 }
             }
+
+            SCREEN_LOGW ("Measure %s of sensor %s not found.", measure_name, sensor_name);
         }
     }
+
+    SCREEN_LOGW ("Measure %s.%s not found. Exiting.", sensor_name, measure_name);
 
     return 0;
 }		/* -----  end of function updateScreenMeasure  ----- */
@@ -512,6 +532,8 @@ printMeasures ()
         size_t len;
         int space_left = 255;                       /* 256 minus the \0 */
 
+        SCREEN_LOGI ("Constructing string to display for sensor %s", 
+                     tracked_sensors.sensors[i].name);
         snprintf (buffer, 256, "%s =>", tracked_sensors.sensors[i].name);
         strncpy (str_p, buffer, space_left);
 
