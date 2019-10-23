@@ -13,9 +13,6 @@
 [submodule "components/AutoConnect"]
 	path = components/AutoConnect
 	url = https://github.com/Hieromon/AutoConnect
-[submodule "components/GxEPD"]
-	path = components/GxEPD
-	url = https://github.com/ZinggJM/GxEPD
 [submodule "components/OneWire"]
 	path = components/OneWire
 	url = https://github.com/PaulStoffregen/OneWire
