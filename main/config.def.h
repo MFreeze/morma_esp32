@@ -29,9 +29,8 @@
 #define SOIL_MEASURES           0       // Should morma try to perform soil measures?
 #define SEND_DATA_INFLUXDB      0       // Should morma send data to InfluxDB server?
 #define INFLUX_USE_SSL          1       // Should the connection to InfluxDB use HTTPS?
-#define WEB_SERVER              0
-#define USE_SPIFFS              1       // Determine whether we should use internal storage
 #define SENSOR_DEBUG            1
+#define DEBUG_SCREEN            1       // Enable display of screen information on Serial port
 #define USE_AUTOCONNECT         0       // Use autoconnect component to connect to wifi
 
 #define BME_NAME_1              "out"
@@ -42,13 +41,7 @@
                                         // saved. Thus a measure is saved every 
                                         // MEASURE_DELAY * SAVED_MEASURE_PERIOD seconds
 
-#define NB_MEASURES_BEFORE_FILE_ROTATION 2000
 // #define ESP_ID "Ecole2"
-
-// If Wifi
-// #define WIFI_NAME "my_network_ssid"
-// #define WIFI_PASS "my_network_key"
-// Endif
 
 // If SEND_DATA_INFLUXDB
 // #define INFLUX_DATABASE "database_name"

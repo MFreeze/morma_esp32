@@ -42,4 +42,14 @@
 #define SCREEN_LOGI(str_format, ...)
 #endif     /* -----  not DEBUG_SCREEN  ----- */
 
+
+#ifdef  WIFI
+#define WIFI_LOGE(str_format, ...) ESP_LOGE ("WIFI", "WIFI - %s, %d: " str_format, __FILE__, __LINE__, ##__VA_ARGS__);
+#define WIFI_LOGW(str_format, ...) ESP_LOGW ("WIFI", "WIFI - %s, %d: " str_format, __FILE__, __LINE__, ##__VA_ARGS__);
+#define WIFI_LOGI(str_format, ...) ESP_LOGI ("WIFI", "WIFI - %s, %d: " str_format, __FILE__, __LINE__, ##__VA_ARGS__);
+#else      /* -----  not WIFI  ----- */
+#define WIFI_LOGE(str_format, ...)
+#define WIFI_LOGW(str_format, ...)
+#define WIFI_LOGI(str_format, ...)
+#endif     /* -----  WIFI  ----- */
 #endif      /* __DEBUG_H__ */

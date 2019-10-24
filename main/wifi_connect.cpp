@@ -18,18 +18,13 @@
 
 #include "wifi_connect.h"
 #include "config.h" // This file is included only to be sure that wifi_connect is recompiled as soon as config.h is modified.
+#include "debug.h"
+#include "screen_macros.h"
 
 // If the wifi ssid or the passphrase is not defined, we run the autoconnect component.
-#if !defined(WIFI_NAME) || !defined(WIFI_PASS)
-#define USE_AUTOCONNECT 1
-#endif
-
 #include <WiFi.h>
-
-#if USE_AUTOCONNECT
 #include <WebServer.h>
 #include <AutoConnect.h>
-#endif
 
 
 /*-----------------------------------------------------------------------------
@@ -37,10 +32,8 @@
  *-----------------------------------------------------------------------------*/
 /* {{{ -------- Global variables -------- */
 static int initialized = 0;
-#if USE_AUTOCONNECT
 static WebServer Server;
 static AutoConnect Portal(Server);
-#endif
 /* }}} */
 
 
@@ -50,14 +43,13 @@ static AutoConnect Portal(Server);
  *  Local Function
  *-----------------------------------------------------------------------------*/
 /* {{{ -------- Local Function -------- */
-# if USE_AUTOCONNECT
     void 
 rootPage ()
 {
+    WIFI_LOGI ("Serving root page!");
     char content[] = "Hello, world";
     Server.send (200, "text/plain", content);
 }
-#endif
 /* }}} */
 
 
@@ -79,15 +71,18 @@ initWifiConnection ()
     if (initialized)
         return; 
 
-#if USE_AUTOCONNECT
+    StartTracer ("Connection Wifi");
     Server.on ("/", rootPage);
-    Portal.begin ();
-#else
-    WiFi.begin (WIFI_NAME, WIFI_PASS);
-    while (WiFi.status () != WL_CONNECTED)
-        delay (100);
-    Serial.println ("Wifi connected!");
-#endif
+    if (Portal.begin ())
+    {
+        WIFI_LOGI ("Connected to Wifi (%s)", WiFi.localIP ().toString ().c_str());        
+        StopTracer (1);
+    }
+    else
+    {
+        WIFI_LOGW ("Unable to connect, fallback to access point mode.");
+        StopTracer (0);
+    }
     initialized = 1;    
 }		/* -----  end of function initWifiConnection  ----- */
 /* }}} */
@@ -106,9 +101,7 @@ initWifiConnection ()
     void
 wifiLoopRoutine ()
 {
-#if USE_AUTOCONNECT
     Portal.handleClient ();
-#endif
 }		/* -----  end of function wifiLoopRoutine  ----- */
 /* }}} */
 /* }}} */
