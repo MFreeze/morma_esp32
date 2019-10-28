@@ -10,9 +10,6 @@
 [submodule "components/arduino-esp32"]
 	path = components/arduino-esp32
 	url = https://github.com/espressif/arduino-esp32
-[submodule "components/AutoConnect"]
-	path = components/AutoConnect
-	url = https://github.com/Hieromon/AutoConnect
 [submodule "components/OneWire"]
 	path = components/OneWire
 	url = https://github.com/PaulStoffregen/OneWire
