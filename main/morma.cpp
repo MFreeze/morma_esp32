@@ -33,7 +33,6 @@
 #if WIFI 
 #include "wifi_connect.h"
 #include <WebServer.h>
-#include <AutoConnect.h>
 #endif
 
 /* No need to explicitly force use of Wifi when using influxdb since the library 
