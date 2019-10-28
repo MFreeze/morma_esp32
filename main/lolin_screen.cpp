@@ -22,6 +22,7 @@
 #include "screen_macros.h"
 #include "lolin_screen.h"
 #include "debug.h"
+#include "wifi_connect.h"
 
 /*-----------------------------------------------------------------------------
  *  Pin Declaration
@@ -147,12 +148,16 @@ sensor_array_t tracked_sensors;
  *  Description:  Print a message on the screen 
  *   Parameters:  const char *messgae: the message to print
  *                int eol: a boolean that indicates whether the line should end or not
+ *                int clear: should the screen be cleared before print
+ *                int refresh: do we refresh screen after add
+ *                int print_time: should the time be displayed
+ *                int wifi_state = should the wifi state be displayed
  *       Return:  
  * =====================================================================================
  */
 /* --------- printMessage --------- {{{ */
     void
-printMessage (const char *message, int eol, int clear, int refresh)
+printMessage (const char *message, int eol, int clear, int refresh, int print_time, int wifi_state)
 {
     if (cur_nb_line == max_nb_line || clear)
     {
@@ -176,6 +181,30 @@ printMessage (const char *message, int eol, int clear, int refresh)
     else
     {
         EPD.print (message);
+    }
+
+    if (print_time || wifi_state)
+    {
+        int cur_x = EPD.getCursorX ();
+        int cur_y = EPD.getCursorY ();
+        char tmp_buffer[256] = {0};
+
+        EPD.setCursor (0, max_nb_line * 8);
+        if (print_time && wifi_state)
+        {
+            snprintf (tmp_buffer, 256, "%s (%s)", getFormattedNTPTime (), getWifiState () ? "Connected" : "Not connected");
+        }
+        else if (wifi_state)
+        {
+            snprintf (tmp_buffer, 256, "%s", getFormattedNTPTime ());
+        }
+        else
+        {
+            snprintf (tmp_buffer, 256, "(%s)", getWifiState () ? "Connected" : "Not connected");
+        }
+        EPD.print (tmp_buffer);
+
+        EPD.setCursor (cur_x, cur_y);
     }
 
     if (refresh)
@@ -282,7 +311,7 @@ clearScreen ()
     void
 initTracing (const char *label)
 {
-    printMessage (label, 0, 0, 1);
+    printMessage (label, 0, 0, 1, 1, 1);
 }		/* -----  end of function initTracing  ----- */
 /* }}} */
 
@@ -303,7 +332,7 @@ statusTracing (int status)
 
     EPD.setCursor (STATUS_OFFSET, cur_y);
 
-    printMessage (status ? STATUS_SUCCESS : STATUS_ERROR, 1, 0, 1);
+    printMessage (status ? STATUS_SUCCESS : STATUS_ERROR, 1, 0, 1, 1, 1);
 }		/* -----  end of function statusTracing  ----- */
 /* }}} */
 
@@ -560,10 +589,10 @@ printMeasures ()
             SCREEN_LOGI ("Mesures: %s", to_print);
         }
 
-        printMessage (to_print, 1, 0, 0);
+        printMessage (to_print, 1, 0, 0, 1, 1);
     }
 
-    printMessage ("", 0, 0, 1);                 /* Refresh screen */
+    printMessage ("", 0, 0, 1, 1, 1);                 /* Refresh screen */
 }		/* -----  end of function printMeasures  ----- */
 /* }}} */
 /* }}} */

@@ -14,7 +14,7 @@ RESOURCE_DIR=${GIT_ROOT_DIR}/resources
 COMPONENT_DIR=${GIT_ROOT_DIR}/components
 
 # Component that only need a generic component.mk (ie sources are at the root of the directory)
-COMPONENTS_DEFAULT_MK=(Adafruit_BME280_Library Adafruit-GFX-Library Adafruit_Sensor OneWire)
+COMPONENTS_DEFAULT_MK=(Adafruit_BME280_Library Adafruit-GFX-Library Adafruit_Sensor OneWire NTPClient WIFIMANAGER-ESP32)
 DEFAULT_MK_NAME=generic_component.mk
 
 # Component that require generic src_component.mk (ie sources are packed in src directory)

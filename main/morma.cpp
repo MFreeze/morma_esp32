@@ -196,6 +196,8 @@ void loop()
     sendInfluxData ();
 #endif
 
+    ESP_LOGI ("Time", "%s", getFormattedNTPTime ());
+
     PrintMeasure ();
 
     delay(MEASURE_DELAY * 1000); 

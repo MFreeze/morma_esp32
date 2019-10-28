@@ -25,3 +25,9 @@
 [submodule "components/LOLIN_EPD_Library"]
 	path = components/LOLIN_EPD_Library
 	url = https://github.com/wemos/LOLIN_EPD_Library
+[submodule "components/NTPClient"]
+	path = components/NTPClient
+	url = https://github.com/arduino-libraries/NTPClient.git
+[submodule "components/WIFIMANAGER-ESP32"]
+	path = components/WIFIMANAGER-ESP32
+	url = https://github.com/zhouhan0126/WIFIMANAGER-ESP32.git

@@ -20,7 +20,10 @@
 #ifndef  __WIFI_CONNECTION_H__
 #define  __WIFI_CONNECTION_H__
 
+
 void initWifiConnection ();
 void wifiLoopRoutine ();
+const char *getFormattedNTPTime ();
+int getWifiState ();
 
 #endif   /* ----- #ifndef __WIFI_CONNECTION_H__  ----- */

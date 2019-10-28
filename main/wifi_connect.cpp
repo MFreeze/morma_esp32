@@ -23,34 +23,31 @@
 
 // If the wifi ssid or the passphrase is not defined, we run the autoconnect component.
 #include <WiFi.h>
+#include <WiFiUdp.h>
+#include <DNSServer.h>
 #include <WebServer.h>
-#include <AutoConnect.h>
+#include <WiFiManager.h>
+#include <NTPClient.h>
 
 
 /*-----------------------------------------------------------------------------
  *  Global variables
  *-----------------------------------------------------------------------------*/
+
+#ifndef  PORTAL_TIMEOUT
+#define  PORTAL_TIMEOUT     180
+#endif   /* ----- #ifndef PORTAL_TIMEOUT  ----- */
+
 /* {{{ -------- Global variables -------- */
 static int initialized = 0;
 static WebServer Server;
-static AutoConnect Portal(Server);
+static WiFiManager wifimanager;
+static WiFiUDP ntpUDP;
+static NTPClient timeClient (ntpUDP, "europe.pool.ntp.org", 3600, 600000);
+static char buffer[256];
 /* }}} */
 
 
-
-
-/*-----------------------------------------------------------------------------
- *  Local Function
- *-----------------------------------------------------------------------------*/
-/* {{{ -------- Local Function -------- */
-    void 
-rootPage ()
-{
-    WIFI_LOGI ("Serving root page!");
-    char content[] = "Hello, world";
-    Server.send (200, "text/plain", content);
-}
-/* }}} */
 
 
 /*-----------------------------------------------------------------------------
@@ -72,18 +69,20 @@ initWifiConnection ()
         return; 
 
     StartTracer ("Connection Wifi");
-    Server.on ("/", rootPage);
-    if (Portal.begin ())
+    wifimanager.setTimeout (PORTAL_TIMEOUT);
+    initialized = wifimanager.autoConnect ("ESP32_AP", "12345678") ? 1 : 0;
+
+    if (initialized)
     {
-        WIFI_LOGI ("Connected to Wifi (%s)", WiFi.localIP ().toString ().c_str());        
+        StopTracer (1);
+        StartTracer ("Init NTP");
+        timeClient.begin ();
         StopTracer (1);
     }
     else
     {
-        WIFI_LOGW ("Unable to connect, fallback to access point mode.");
         StopTracer (0);
     }
-    initialized = 1;    
 }		/* -----  end of function initWifiConnection  ----- */
 /* }}} */
 
@@ -101,7 +100,44 @@ initWifiConnection ()
     void
 wifiLoopRoutine ()
 {
-    Portal.handleClient ();
+    if (initialized)
+    {
+        timeClient.update ();
+    }
 }		/* -----  end of function wifiLoopRoutine  ----- */
+/* }}} */
+
+
+/*
+ * ===  FUNCTION  ======================================================================
+ *         Name:  getFormattedNTPTime
+ *  Description:  Return a string containing the formatted NTP Time 
+ *   Parameters:  
+ *       Return:  a string containing the formatted NTP time
+ * =====================================================================================
+ */
+/* --------- getFormattedNTPTime --------- {{{ */
+    const char *
+getFormattedNTPTime ()
+{
+    strncpy (buffer, timeClient.getFormattedTime ().c_str (), 256);
+    return buffer;
+}		/* -----  end of function getFormattedNTPTime  ----- */
+/* }}} */
+
+/*
+ * ===  FUNCTION  ======================================================================
+ *         Name:  getWifiState
+ *  Description:  Get the wifi state 
+ *   Parameters:  
+ *       Return:  Return 1 if connected, 0 otherwise
+ * =====================================================================================
+ */
+/* --------- getWifiState --------- {{{ */
+    int
+getWifiState ()
+{
+    return initialized;
+}		/* -----  end of function getWifiState  ----- */
 /* }}} */
 /* }}} */
